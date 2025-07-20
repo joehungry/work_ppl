@@ -36,8 +36,6 @@ def return_time():
     time_right_now = str(now.time())[:8]
     return time_right_now        
 
-#error()では見つからなかったErrorがあった場合に文章をprintします
-
 def keypres(amount, what):
     variable = what + 1
     print(f'+{amount}')
@@ -108,6 +106,7 @@ def ReturnRest(rest_var, recess):
 
 
 def extract_if_True(extract_value, boolian):
+    input(extract_value)
     if boolian == True:
         return extract_value
     return 0
