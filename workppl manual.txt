@@ -1,0 +1,54 @@
+
+
+
+
+general Command
+
+p, P : Turns on point system (MUST ENTER TO START STUDY SESSION)
+
+p', p' : controls the point system(on, off)
+
+C', comment': puts entered string in the diary entry
+
+T', time', tim.length': can input length of study time (MUST ENTER TO START STUDY SESSION)
+
+L', label': can input name of study session (MUST ENTER TO START STUDY SESSION)
+
+error: turns on error screen when program chashes(cannot turn off)
+
+TL', LT': can set settings of time length and label for study session
+          INPUT: \s(sets time length and label to the same as last session)
+                 \n(sets both to None) 
+
+MS', MainScreen', UI': makes the study session screen a stasis screen(off)
+                                    or a non-stasis screen(on) (on, off)
+
+L+': adds to last input name from last session and makes it input for this session
+
+S': turns sound on/off (on, off)
+
+show : shows variables(study time: shows study time
+                       list, study list: shows list of study sessions
+                       points: shows how many points you have currently
+                       rest: shows how much time you have for rest)
+
+end study: ends study and closes screen(i believe its only usable after study session has 	   ended)
+
+use: (points: uses points to get rest
+      label: makes reccomended label the lavel(probabaly a defunct feature))
+
+exit: exits command screen when in rest monde??
+
+sound change: : changs music that plays when study ends/rest ends(study, rest)
+sound volume: : changs volume of music when study ends/rest ends
+
+
+how to use the study session screen:
+
+
+how tou use rest study session
+
+when wanting to go to command screen, use % or & in the 
+
+"Home key": to change main screen type
+"Ins key": to fix main screen type7777777000000
