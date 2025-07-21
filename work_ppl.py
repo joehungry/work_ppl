@@ -112,24 +112,24 @@ class workSession:
 
         self.DEVIDE_POINT_BY = 0.7
 
-        persistent_data_file = file.content('REPORT\\python_hidden_file', 'CT_LS.txt')
-        settings_file = file.content('REPORT\\python_hidden_file', 'settings.txt')
-        subprocess.check_call(["attrib","+H","REPORT\\python_hidden_file"])
+        persistent_data_file = file.content('REPORT\\logs', 'progress.txt')
+        settings_file = file.content('REPORT\\logs', 'settings.txt')
+        subprocess.check_call(["attrib","+H","REPORT\\logs"])
 
         persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'past_goal': None, 'today': None}
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
-        subprocess.check_call(["attrib","+H", 'REPORT\\python_hidden_file\\CT_LS.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
 
         settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False}
         self.manage_settings_data = data.manage(settings_data, settings_file)
-        subprocess.check_call(["attrib","+H", 'REPORT\\python_hidden_file\\Settings.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\\logs\\Settings.txt'])
 
 
         file.content(f'REPORT\\music')
         self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt')
         self.point_detail_file = file.content(f'REPORT\\log of points\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt')
         self.study_content_file = file.content(f'REPORT\\log of studied content\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt')
-        self.log_file = file.content('REPORT\\python_hidden_file', 'log.txt')
+        self.log_file = file.content('REPORT\\logs', 'log.txt')
 
     def done_hour(self):
         print()
@@ -866,6 +866,10 @@ class workSession:
         self.time_list.append(self.the_time/60)
         self.label_list.append(self.label)
         self.time_ended_list.append(return_time())
+        if self.delete_log_file == True:
+            self.log_file.delete_file()
+            subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
+
         self.write_log_files()
         self.write_diary_file()
         self.past_label = self.label
