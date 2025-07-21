@@ -62,7 +62,6 @@ def CheckAnswer(question):
         except:
             prints.err('数字を入力してください')
             return answer
-#########################################command screen stuff###################################################################################################################################################
 
 def print_string_true_false(temp_value, string, temp_replacement):
     if num.isNum(temp_replacement) == False:
@@ -106,7 +105,6 @@ def ReturnRest(rest_var, recess):
 
 
 def extract_if_True(extract_value, boolian):
-    input(extract_value)
     if boolian == True:
         return extract_value
     return 0
@@ -143,25 +141,25 @@ class work_ppl:
 
         self.div_point = 0.7
 
-        persistent_data_file = file.content('Python Report\python_hidden_file', 'CT_LS.txt')
-        settings_file = file.content('Python Report\python_hidden_file', 'settings.txt')
-        subprocess.check_call(["attrib","+H","Python Report\python_hidden_file"])
+        persistent_data_file = file.content('REPORT\python_hidden_file', 'CT_LS.txt')
+        settings_file = file.content('REPORT\python_hidden_file', 'settings.txt')
+        subprocess.check_call(["attrib","+H","REPORT\python_hidden_file"])
 
         persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'last_study_time':0, 'today': None}
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
-        subprocess.check_call(["attrib","+H", 'Python Report\python_hidden_file\CT_LS.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\CT_LS.txt'])
 
         settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False}
         self.manage_settings_data = data.manage(settings_data, settings_file)
-        subprocess.check_call(["attrib","+H", 'Python Report\python_hidden_file\Settings.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\Settings.txt'])
 
 
-        music_file = file.content(f'Python Report\music')
-        self.diary_file = file.content(f'Python Report\diary\{str(now_start.year)}\{now_start.month}', f'diary for {str(today)}.txt')
-        self.point_detail_file = file.content(f'Python Report\log of points\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
-        self.study_content_file = file.content(f'Python Report\log of studied content\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
-        self.study_content_log_file = file.content('Python Report\python_hidden_file', 'LL_log.txt')
-        self.study_time_log_file = file.content('Python Report\python_hidden_file', 'TL_log.txt')
+        music_file = file.content(f'REPORT\music')
+        self.diary_file = file.content(f'REPORT\diary\{str(now_start.year)}\{now_start.month}', f'diary for {str(today)}.txt')
+        self.point_detail_file = file.content(f'REPORT\log of points\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
+        self.study_content_file = file.content(f'REPORT\log of studied content\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
+        self.study_content_log_file = file.content('REPORT\python_hidden_file', 'LL_log.txt')
+        self.study_time_log_file = file.content('REPORT\python_hidden_file', 'TL_log.txt')
 
     def done_hour(self):
         print()

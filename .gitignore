@@ -1,4 +1,3 @@
-Python Report/
-__pycache__/
+REPORT/
+**__pycache__/
 .vscode/
-funcs/__pycache__/

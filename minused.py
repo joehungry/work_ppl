@@ -3,10 +3,10 @@ import os, datetime, subprocess
 
 today = datetime.datetime.now()
 
-pointsFile = file.content('Python Report/python_hidden_file', 'CT_LS.txt')
+pointsFile = file.content('REPORT/python_hidden_file', 'CT_LS.txt')
 persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'last_study_time':0, 'today': None}
 manage_persistent_data = data.manage(persistent_data, pointsFile)
-subprocess.check_call(["attrib","+H", 'Python Report\python_hidden_file\CT_LS.txt'])
+subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\CT_LS.txt'])
 extracted_value = manage_persistent_data.extract_from_file()
 originalPointNumber = float(extracted_value['current_points'])
 
@@ -98,7 +98,7 @@ while True:
 
         onpeningString = f'{endingDash}\n\n'
 
-        yearFile = file.content(f'Python Report/usedPoints/{str(today.year)}', f'Points used in {today.strftime('%m %Y')}.txt')
+        yearFile = file.content(f'REPORT/usedPoints/{str(today.year)}', f'Points used in {today.strftime('%m %Y')}.txt')
         savedContent = yearFile.fetch()
         dashLen = '-----'
         if len(month) == 2:

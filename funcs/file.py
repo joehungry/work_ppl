@@ -233,6 +233,6 @@ if __name__ == '__main__':
 
     ftest.change(0, 'true', '*lock*')
 
-    pointsFile = content('Python Report/python_hidden_file', 'CT_LS.txt')
+    pointsFile = content('REPORT/python_hidden_file', 'CT_LS.txt')
     pointsFileContent = pointsFile.fetch()
     pointsFile.change(8, str(40), '*lock*')

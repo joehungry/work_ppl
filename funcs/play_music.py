@@ -4,7 +4,7 @@ from funcs import prints
 class music:
     def __init__(self, volume, using_instance_stduy, using_instance_rest, chose_music):
         self.musicList = []
-        self.music_folder = './Python Report\Music/'
+        self.music_folder = './REPORT\Music/'
         self.volume = volume
         self.chose_music = chose_music
         self.using_instance_dict = {'choose_music_study': using_instance_stduy, 'choose_music_rest': using_instance_rest}
