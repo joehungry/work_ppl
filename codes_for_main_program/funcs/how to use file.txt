@@ -1,5 +1,0 @@
-usable stuff:
-    *lock*, locks file
-    *unlock*, unlocks file
-    encode:, encodes to something
-    *overwrite*, overwrites file
