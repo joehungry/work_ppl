@@ -1,9 +1,0 @@
-continuous_time:18
-current_points:1.3963185217698413
-new_words:0
-correct:1
-incorrect:0
-pages_finished:0
-recess_now:0.0
-last_study_time:0.1
-today:2025-07-21
