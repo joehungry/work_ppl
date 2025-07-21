@@ -97,7 +97,7 @@ def ReturnRest(rest_var, recess):
         elif 'none':
             return 0
         if rest_var == "auto":
-            var = work_ppl.AutoRest(recess)
+            var = workSession.AutoRest(recess)
             return var
         elif not rest_var == None:
             return rest_var
@@ -109,7 +109,7 @@ def extract_if_True(extract_value, boolian):
         return extract_value
     return 0
 
-class work_ppl:
+class workSession:
     def __init__(self):
         self.first_recess = 10
         self.label = None
@@ -120,26 +120,23 @@ class work_ppl:
         self.music_on = True
         self.email_on = True
 
-        self.comment_time = None
         self.comment = None
 
         self.goal = None
         self.add_point = None
 
         self.start_session = None
-        self.showGoal = None
         self.current_points = 0
-        self.pastGoal = None
+        self.past_goal = None
 
-        self.postpone_penalty = 1
-        self.rest_point_conversion_rate = 0.1
-        self.max_deletion_percentage = 0.45
+        self.REST_POINT_CONVERSION_RATE = 0.1
+        self.MAX_DELETION_PERCENTAGE = 0.45
 
         self.rest_time_points = 0
         self.time_started_list = []
         self.time_ended_list = []
 
-        self.div_point = 0.7
+        self.DEVIDE_POINT_BY = 0.7
 
         persistent_data_file = file.content('REPORT\python_hidden_file', 'CT_LS.txt')
         settings_file = file.content('REPORT\python_hidden_file', 'settings.txt')
@@ -154,7 +151,7 @@ class work_ppl:
         subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\Settings.txt'])
 
 
-        music_file = file.content(f'REPORT\music')
+        file.content(f'REPORT\music')
         self.diary_file = file.content(f'REPORT\diary\{str(now_start.year)}\{now_start.month}', f'diary for {str(today)}.txt')
         self.point_detail_file = file.content(f'REPORT\log of points\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
         self.study_content_file = file.content(f'REPORT\log of studied content\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
@@ -206,17 +203,17 @@ class work_ppl:
         hour, minute, second = seconds_to_hms(self.continuous_time - self.continuous_time_at_start)
         total_hour, total_minute, total_second = seconds_to_hms(self.continuous_time)
         what_to_write = f'\n{"-"*39}'
-        what_to_write = f'\n{str(hour)}時間 {str(minute)}分 {str(second)}秒'
-        what_to_write = f'\n（合計：{str(total_hour)}時間 {str(total_minute)}分 {str(total_second)}秒）'
-        what_to_write = f'\n\nポイント：{str(float(self.current_points) - float(self.last_session_at_start))}'
-        what_to_write = f'\n（ポイントの合計：{str(self.current_points)}）'
-        what_to_write = f'\n{"-"*39}'
-        what_to_write = f'\nended : {str(return_time())}'
+        what_to_write += f'\n{str(hour)}時間 {str(minute)}分 {str(second)}秒'
+        what_to_write += f'\n（合計：{str(total_hour)}時間 {str(total_minute)}分 {str(total_second)}秒）'
+        what_to_write += f'\n\nポイント：{str(float(self.current_points) - float(self.last_session_at_start))}'
+        what_to_write += f'\n（ポイントの合計：{str(self.current_points)}）'
+        what_to_write += f'\n{"-"*39}'
+        what_to_write += f'\nended : {str(return_time())}'
         self.point_detail_file.save(what_to_write, '*lock*')
 
     def write_diary_file(self):
         if not self.comment == None:
-            what_to_write = f'\n{str(self.diary_tim)}　【{str(self.label_list[len(self.label_list)-1])}】\n{"-"*86}\n'
+            what_to_write = f'\n{str(self.comment_time)}　【{str(self.label_list[len(self.label_list)-1])}】\n{"-"*86}\n'
             self.diary_file.save(what_to_write)
             what_to_write = ''
             try:
@@ -231,7 +228,7 @@ class work_ppl:
                 what_to_write = ''
             what_to_write += '\n\n\n'
             self.diary_file.save(what_to_write, '*lock*')
-            self.diary_tim == None    
+            self.comment_time == None    
             
     def write_log_files(self):            
         if not len(self.time_list) == 0:
@@ -332,7 +329,7 @@ class work_ppl:
     def rest(self, time_of_rest):
         rest_session = work_ppl_rest.main_rest_class()
         #? i think its past points
-        rest_session.get_values(time_of_rest, self.rest_time_points, self.rest_point_conversion_rate, self.email_on, self.max_deletion_percentage, self.past_points, self.music_content, self.music_on)
+        rest_session.get_values(time_of_rest, self.rest_time_points, self.REST_POINT_CONVERSION_RATE, self.email_on, self.MAX_DELETION_PERCENTAGE, self.past_points, self.music_content, self.music_on)
         minus_points = rest_session.rest_func()
         if minus_points == True:
             self.manage_persistent_data.change_value({'current_points': 0})
@@ -350,7 +347,7 @@ class work_ppl:
                 temp, progressDict = goalEvaluator.evaluate_goal(self.goal, goal_dict)
 
                 print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ', end='')
-                if self.ShowMain == 1:
+                if self.swich_ui == 1:
                     print('\033[33m' + '総勉強時間モード' + END)
                 else:
                     print()
@@ -396,12 +393,12 @@ class work_ppl:
                 print(f'{self.minute} min {self.second} sec')
                 print()
                 if not self.add_point == 0:
-                    print(f'{((self.new_point + self.tim_point) * self.div_point * 100)} points')
+                    print(f'{((self.new_point + self.tim_point) * self.DEVIDE_POINT_BY * 100)} points')
                 else:
                     print(f'{0} points')
 
             case 'minimal_session_ui':
-                if self.printNoMain == True:
+                if self.print_minimal_ui == True:
                     temp, progressDict = goalEvaluator.evaluate_goal(self.goal, goal_dict)
                     
                     os.system('cls')
@@ -421,8 +418,7 @@ class work_ppl:
                     #    pass
                         
                     print("\033[8m")
-                    self.printNoMain = False
-                    self.MINpassedPrint = False
+                    self.print_minimal_ui = False
 
             case 'ending_screen_ui':
                 print()
@@ -439,7 +435,7 @@ class work_ppl:
                 if self.recess == None or self.recess == 0:
                     print("合計：", self.current_points, "points")
                 else:
-                    print("合計", self.current_points + ((self.recess - self.recess) * self.rest_point_conversion_rate), "points")        
+                    print("合計", self.current_points + ((self.recess - self.recess) * self.REST_POINT_CONVERSION_RATE), "points")        
                 print()
 
                 show_recess = float(self.recess)
@@ -458,7 +454,7 @@ class work_ppl:
                 todayShow = todayRaw.strftime('%Y年%#m月%#d')
 
                 print("\033[0m" + f'{todayShow}日の最終スコアは：')
-                work_ppl.done_hour(self)
+                workSession.done_hour(self)
                 print()
                 print()
                 print("ポイントの合計：", self.current_points)
@@ -476,7 +472,7 @@ class work_ppl:
                     print("終わった章：" + str(self.pages_finished) + "章")
                     print() 
                 print()
-                work_ppl.show_list(self)
+                workSession.show_list(self)
 
     def cli_screen(self):
         temp_value = '$'
@@ -560,9 +556,9 @@ class work_ppl:
                     self.add_point = cli_output[command]
                     print_var = cli_output[command]
                 case 'show_study_time':
-                    work_ppl.done_hour(self)
+                    workSession.done_hour(self)
                 case 'show_study_list':
-                    work_ppl.show_list(self)
+                    workSession.show_list(self)
                 case 'show_points':
                     print(self.current_points)
                 case 'end_study':
@@ -592,8 +588,8 @@ class work_ppl:
                     self.goal = 0
                     print_var = 'None'
                 case 'goal_same_goal':
-                    if not self.pastGoal == None:
-                       self.goal = self.pastGoal
+                    if not self.past_goal == None:
+                       self.goal = self.past_goal
                     else:
                         prints.err('past goal does not exist')
                 case 'print':
@@ -606,11 +602,11 @@ class work_ppl:
         self.repeat_one_finish = 0
         self.repeat_right = 0
         self.repeat_wrong = 0
-        self.repeat_new =0
+        self.repeat_new = 0
         self.past_correct_len = self.correct
-        self.MINpassedPrint = False
+        self.session_time_finished = False
         self.the_time = 0
-        self.ShowMain = 0
+        self.swich_ui = 0
         self.reset_time = time.time()
         self.cntnuos_rst = time.time()
         self.last_count = math.floor(((self.continuous_time + self.the_time) / 60) / 25) + 1
@@ -619,20 +615,20 @@ class work_ppl:
         self.time_started_list.append(return_time())
         self.actual_study_time = 0
         self.new_point = 0
-        self.printNoMain = True
-        self.emailSent = False
-        self.finishedContentList = []
-        self.lastFinishedContent = None
+        self.print_minimal_ui = True
+        self.email_sent = False
+        self.finished_content_list = []
+        self.last_finished_content = None
         
-        self.useMusic, self.is_using_music, self.music = self.music_content.set_song('choose_music_study', self.music_on)
+        self.use_music, self.is_using_music, self.music = self.music_content.set_song('choose_music_study', self.music_on)
 
-        emailLabel = '【WORKPPL】STUDY TIME HAS ENDED NOTIFICATION'
-        emailBody = f'{self.label}の{self.study_time}分が終了しました\n勉強を終了してください'
-        self.studyEndedEmail = sendEmail.EmailSender(emailLabel, emailBody)
+        EMAIL_LABEL = '【WORKPPL】STUDY TIME HAS ENDED NOTIFICATION'
+        EMAIL_BODY = f'{self.label}の{self.study_time}分が終了しました\n勉強を終了してください'
+        self.studyEndedEmail = sendEmail.EmailSender(EMAIL_LABEL, EMAIL_BODY)
 
     def calculate_time_and_point(self):
         self.the_time = round(time.time()-self.reset_time)
-        if self.ShowMain == 1:
+        if self.swich_ui == 1:
             self.showTime = self.the_time + self.continuous_time
         else:
             self.showTime = self.the_time
@@ -688,7 +684,7 @@ class work_ppl:
 
         goalCompletedPercentage = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
         
-        totl_tim_point = self.totl_tim_point * self.div_point
+        totl_tim_point = self.totl_tim_point * self.DEVIDE_POINT_BY
         self.pointString = f'{totl_tim_point} points'
         if self.goal == None:
             totl_tim_point_divided = totl_tim_point * JustInTimeDiv
@@ -735,106 +731,105 @@ class work_ppl:
 
     def session(self):
         while True:
-            work_ppl.calculate_time_and_point(self)
+            workSession.calculate_time_and_point(self)
 
             SWTMain = win32api.GetKeyState(0x67)
             if SWTMain < 0:
-                self.ShowMain = num.cap(self.ShowMain+1, 3)
-                self.printNoMain = True
+                self.swich_ui = num.cap(self.swich_ui+1, 3)
+                self.print_minimal_ui = True
                 sleep(0.04)
 
-            if self.ShowMain == 2:
-                work_ppl.ui_screen(self, 'minimal_session_ui')
+            if self.swich_ui == 2:
+                workSession.ui_screen(self, 'minimal_session_ui')
             else:
-                self.printNoMain = False
-                work_ppl.ui_screen(self, 'session_ui')
-                self.MINpassedPrint = False
+                self.print_minimal_ui = False
+                workSession.ui_screen(self, 'session_ui')
                 
             one_finish = win32api.GetKeyState(0x64)
             if one_finish < 0:
                 self.pages_finished = keypres(1, self.pages_finished)
-                self.printNoMain = True
+                self.print_minimal_ui = True
                 self.repeat_one_finish += 1
-                self.finishedContentList.append('one_finish')
+                self.finished_content_list.append('one_finish')
 
             right = win32api.GetKeyState(0x61)
             if right < 0:                            
                 self.correct = keypres(1, self.correct)
                 self.repeat_right += 1
-                self.printNoMain = True
-                self.finishedContentList.append('right')
+                self.print_minimal_ui = True
+                self.finished_content_list.append('right')
 
             wrong = win32api.GetKeyState(0x62)
             if wrong < 0:
                 self.incorrect = keypres(1, self.incorrect)
                 self.repeat_wrong += 1
-                self.printNoMain = True
-                self.finishedContentList.append('wrong')
+                self.print_minimal_ui = True
+                self.finished_content_list.append('wrong')
                     
             new = win32api.GetKeyState(0x63)
             if new < 0:
                 self.new_words = keypres(1, self.new_words)
                 self.repeat_new += 1
-                self.printNoMain = True
-                self.finishedContentList.append('new')
+                self.print_minimal_ui = True
+                self.finished_content_list.append('new')
 
             undo = win32api.GetKeyState(0x6E)
             if undo >= 0:
                 pass
-            elif not len(self.finishedContentList) == 0:
-                self.lastFinishedContent = self.finishedContentList[len(self.finishedContentList)-1]
-                print(f'-1 {self.lastFinishedContent}')
+            elif not len(self.finished_content_list) == 0:
+                self.last_finished_content = self.finished_content_list[len(self.finished_content_list)-1]
+                print(f'-1 {self.last_finished_content}')
                 sleep(0.1)
-            if self.lastFinishedContent == None:
+            if self.last_finished_content == None:
                 pass
-            elif self.lastFinishedContent == 'one_finish':
+            elif self.last_finished_content == 'one_finish':
                 self.repeat_one_finish -= 1
                 self.pages_finished -= 1
-                self.printNoMain = True
-                self.lastFinishedContent = None
-                self.finishedContentList.pop(len(self.finishedContentList)-1)
+                self.print_minimal_ui = True
+                self.last_finished_content = None
+                self.finished_content_list.pop(len(self.finished_content_list)-1)
 
-            elif self.lastFinishedContent == 'right':
+            elif self.last_finished_content == 'right':
                 self.correct -= 1
                 self.repeat_right -= 1
-                self.printNoMain = True
-                self.lastFinishedContent = None
-                self.finishedContentList.pop(len(self.finishedContentList)-1)
-            elif self.lastFinishedContent == 'wrong':
+                self.print_minimal_ui = True
+                self.last_finished_content = None
+                self.finished_content_list.pop(len(self.finished_content_list)-1)
+            elif self.last_finished_content == 'wrong':
                 self.incorrect -= 1
                 self.repeat_wrong -= 1
-                self.printNoMain = True
-                self.lastFinishedContent = None
-                self.finishedContentList.pop(len(self.finishedContentList)-1)
-            elif self.lastFinishedContent == 'new':
+                self.print_minimal_ui = True
+                self.last_finished_content = None
+                self.finished_content_list.pop(len(self.finished_content_list)-1)
+            elif self.last_finished_content == 'new':
                 self.new_words -= 1
                 self.repeat_new -= 1
-                self.printNoMain = True
-                self.lastFinishedContent = None
-                self.finishedContentList.pop(len(self.finishedContentList)-1)
+                self.print_minimal_ui = True
+                self.last_finished_content = None
+                self.finished_content_list.pop(len(self.finished_content_list)-1)
 
 
-            #if not self.lastFinishedContent == None:
+            #if not self.last_finished_content == None:
 
             if self.the_time / 60  < self.study_time: #Ln257
                 pass
-            elif self.email_on == True and self.emailSent == False:
-                self.emailSent = True
+            elif self.email_on == True and self.email_sent == False:
+                self.email_sent = True
                 try:
                     self.studyEndedEmail.sendEmail()
                 except:
                     pass
-                self.printNoMain = True
+                self.print_minimal_ui = True
 
-            elif self.MINpassedPrint == False:
-                if self.useMusic == 1:
+            elif self.session_time_finished == False:
+                if self.use_music == 1:
                     self.music.play()
-                    self.useMusic = 0
+                    self.use_music = 0
                 print(END)
                 print(str(self.study_time) + "分が経ちました" + "\033[8m")
-                self.MINpassedPrint = True
+                self.session_time_finished = True
             sleep(0.02)
-            if not self.ShowMain == 2:
+            if not self.swich_ui == 2:
                 os.system('cls')
 
             fin = win32api.GetKeyState(0x60)
@@ -843,8 +838,8 @@ class work_ppl:
                 os.system('cls')
                 clear_input_buffer()
                 while True:
-                    finishedGoal, temp = goalEvaluator.evaluate_goal(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
-                    if finishedGoal == False and not self.goal == 0:
+                    completed_goal, temp = goalEvaluator.evaluate_goal(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
+                    if completed_goal == False and not self.goal == 0:
                         print("\033[0m" + "タスクがまだ完了していません。\n本当に", end='')
                     print("\033[0m" + "終了しますか +/-")
                     finish = input(">> ")
@@ -853,11 +848,11 @@ class work_ppl:
 
                     elif finish == "-" or finish == "n":
                         sleep(0.1)
-                        if self.ShowMain == 2:
-                            self.printNoMain = True
+                        if self.swich_ui == 2:
+                            self.print_minimal_ui = True
                         break
                     elif finish == '+' or finish == "y":
-                        work_ppl.calculate_time_and_point(self)
+                        workSession.calculate_time_and_point(self)
                         os.system('cls')
                         return True
                     else:
@@ -880,7 +875,7 @@ class work_ppl:
         self.last_study_time = self.study_time
         self.study_time = None
         self.add_point = None
-        self.pastGoal = self.goal
+        self.past_goal = self.goal
         self.goal = None
         self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words': self.new_words, 'correct': self.correct, 'incorrect': self.incorrect, 'pages_finished': self.pages_finished, 'last_study_time': self.last_study_time})
         os.system('cls')
@@ -891,7 +886,7 @@ class work_ppl:
         if recess <= 0:
             return 0
         while True:
-            work_ppl.ui_screen(self, 'ending_screen_ui')
+            workSession.ui_screen(self, 'ending_screen_ui')
             rest_time_points = CheckAnswer("何分休みますか？")
 
             rest_time_points = ReturnRest(rest_time_points, recess)
@@ -905,14 +900,14 @@ class work_ppl:
     
     def rest_time_to_points(self, rest_time):
         if rest_time > 0:
-            self.current_points += (self.recess - self.rest_time) * self.rest_point_conversion_rate
+            self.current_points += (self.recess - self.rest_time) * self.REST_POINT_CONVERSION_RATE
             self.manage_persistent_data.change_value({'current_points': self.current_points})
 
 
     def chceck_if_continue(self):
         while True:
             self.manage_persistent_data.write_to_file()
-            work_ppl.ui_screen(self, 'ending_screen_ui')
+            workSession.ui_screen(self, 'ending_screen_ui')
             print()
             print("続けますか？")
             end = input("[Enter / - (key)押す]")
@@ -929,7 +924,7 @@ class work_ppl:
         self.write_point_detail_file()
 
         while True:
-            work_ppl.ui_screen(self, 'finished_study_ui')
+            workSession.ui_screen(self, 'finished_study_ui')
             ok = input("\033[8m")
             os.system('cls')
 
@@ -944,7 +939,7 @@ class work_ppl:
            
 ##########################################上は全部関数等です######################################################################################################################################
 if __name__ == '__main__':
-    session = work_ppl()
+    session = workSession()
     first_rest, opening_string = session.extract_data_from_file()
     session.import_settings()
     os.system('cls')
