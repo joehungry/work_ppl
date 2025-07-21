@@ -1,29 +1,4 @@
 #ver.2.2.4
-import math, datetime, time, win32api, msvcrt, os, pygame.mixer, subprocess
-from time import sleep
-from os import system
-from time import sleep
-from funcs import sendEmail, goalEvaluator, goalProgress, prints, num, file, data, prints, work_ppl_rest, play_music, command_console
-
-print("\033[8m")
-print("\033[0m")
-os.system('cls')
-
-Title = "WORK PPL"
-
-system("title " + Title)
-
-RED = '\033[31m'
-END = '\033[0m'
-
-now_start = datetime.datetime.today()
-started_time = str(now_start.time())[:8]
-today = str(now_start)[:10]
-
-
-def clear_input_buffer():
-    while msvcrt.kbhit():
-        msvcrt.getch()
 
 def seconds_to_hms(seconds):
     done_hr = math.floor(seconds / 3600)
@@ -73,7 +48,7 @@ def print_string_true_false(temp_value, string, temp_replacement):
     else:
         replacement = str(temp_replacement)
     split_string_list = string.split(temp_value)
-    return_var = ''
+    return_var = '>> '
     for ilen, i in enumerate(split_string_list):
         return_var += i
         if not ilen == len(split_string_list)-1:
@@ -127,7 +102,6 @@ class workSession:
 
         self.start_session = None
         self.current_points = 0
-        self.past_goal = None
 
         self.REST_POINT_CONVERSION_RATE = 0.1
         self.MAX_DELETION_PERCENTAGE = 0.45
@@ -138,25 +112,24 @@ class workSession:
 
         self.DEVIDE_POINT_BY = 0.7
 
-        persistent_data_file = file.content('REPORT\python_hidden_file', 'CT_LS.txt')
-        settings_file = file.content('REPORT\python_hidden_file', 'settings.txt')
-        subprocess.check_call(["attrib","+H","REPORT\python_hidden_file"])
+        persistent_data_file = file.content('REPORT\\python_hidden_file', 'CT_LS.txt')
+        settings_file = file.content('REPORT\\python_hidden_file', 'settings.txt')
+        subprocess.check_call(["attrib","+H","REPORT\\python_hidden_file"])
 
-        persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'last_study_time':0, 'today': None}
+        persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'past_goal': None, 'today': None}
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
-        subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\CT_LS.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\\python_hidden_file\\CT_LS.txt'])
 
         settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False}
         self.manage_settings_data = data.manage(settings_data, settings_file)
-        subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\Settings.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\\python_hidden_file\\Settings.txt'])
 
 
-        file.content(f'REPORT\music')
-        self.diary_file = file.content(f'REPORT\diary\{str(now_start.year)}\{now_start.month}', f'diary for {str(today)}.txt')
-        self.point_detail_file = file.content(f'REPORT\log of points\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
-        self.study_content_file = file.content(f'REPORT\log of studied content\{str(now_start.year)}\{now_start.month}', f'point {str(today)}.txt')
-        self.study_content_log_file = file.content('REPORT\python_hidden_file', 'LL_log.txt')
-        self.study_time_log_file = file.content('REPORT\python_hidden_file', 'TL_log.txt')
+        file.content(f'REPORT\\music')
+        self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt')
+        self.point_detail_file = file.content(f'REPORT\\log of points\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt')
+        self.study_content_file = file.content(f'REPORT\\log of studied content\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt')
+        self.log_file = file.content('REPORT\\python_hidden_file', 'log.txt')
 
     def done_hour(self):
         print()
@@ -197,7 +170,7 @@ class workSession:
             if self.add_point == 0:
                 what_to_write += ' *no point*'
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
-        self.study_content_file.save(what_to_write, '*lock*')
+        self.study_content_file.save(what_to_write, '*lock*', '*sameLN*')
 
     def write_point_detail_file(self):
         hour, minute, second = seconds_to_hms(self.continuous_time - self.continuous_time_at_start)
@@ -209,7 +182,7 @@ class workSession:
         what_to_write += f'\n（ポイントの合計：{str(self.current_points)}）'
         what_to_write += f'\n{"-"*39}'
         what_to_write += f'\nended : {str(return_time())}'
-        self.point_detail_file.save(what_to_write, '*lock*')
+        self.point_detail_file.save(what_to_write, '*lock*', '*sameLN*')
 
     def write_diary_file(self):
         if not self.comment == None:
@@ -226,33 +199,26 @@ class workSession:
                         what_to_write += '(?)'
                 self.diary_file.save(what_to_write, '*lock*')
                 what_to_write = ''
-            what_to_write += '\n\n\n'
+            what_to_write += '\n\n'
             self.diary_file.save(what_to_write, '*lock*')
             self.comment_time == None    
             
-    def write_log_files(self):            
+    def write_log_files(self):   
+        save_string = ''         
+        if not len(self.log_file.fetch()) == 0:
+            save_string += f'\n'
         if not len(self.time_list) == 0:
-            self.study_time_log_file.delete_file()
-            what_to_write = ''
-            for i in self.time_list:
-                what_to_write += f'{i}\n'
-            self.study_time_log_file.save(what_to_write, '*lock*')
-
-
-            self.study_content_log_file.delete_file()
-            for i in self.label_list:
-                what_to_write += f'{i}\n'
-            try:
-                self.study_content_log_file.save(what_to_write, '*lock*')
-            except UnicodeEncodeError:
-                for i in self.label_list:
-                    self.study_content_log_file.save(i, '*lock*')
+            save_string += f'{self.time_list[len(self.time_list)-1]}:{self.label_list[len(self.label_list)-1]}'
+            self.log_file.save(save_string, '*sameLN*')
+            
 
 
     def extract_data_from_file(self):
         extracted_dict = self.manage_persistent_data.extract_from_file()
         isToday = False
-        if extracted_dict['today'] == today:
+        if extracted_dict['today'] == None:
+            isToday = True
+        elif extracted_dict['today'] == today:
             isToday = True
         self.continuous_time = extract_if_True(extracted_dict['continuous_time'], isToday)
         self.new_words = extract_if_True(extracted_dict['new_words'], isToday)
@@ -260,7 +226,7 @@ class workSession:
         self.incorrect = extract_if_True(extracted_dict['incorrect'], isToday)
         self.pages_finished = extract_if_True(extracted_dict['pages_finished'], isToday)
         self.recess = extract_if_True(extracted_dict['recess_now'], isToday)
-        self.last_study_time = extract_if_True(extracted_dict['last_study_time'], isToday)
+        self.past_goal = extract_if_True(extracted_dict['past_goal'], isToday)
         if self.recess == None:
             self.recess = 0
         self.past_points = extracted_dict['current_points']
@@ -270,17 +236,33 @@ class workSession:
         self.choose_music_rest = extracted_dict['choose_music_rest']
         self.chose_music = extracted_dict['chose_music']
         
-        label_list_temp = self.study_content_log_file.fetch()
-        if isToday == True:
-            self.label_list = label_list_temp
-        else:
-            self.label_list = []
-        #i want the last label to be extracted no matter what
-        time_list_temp = self.study_time_log_file.fetch()
-        if isToday == True:
-            self.time_list = time_list_temp
-        else:
-            self.time_list = []
+        self.label_list = []
+        self.time_list = []
+        self.past_label = None
+        self.last_study_time = None
+        self.delete_log_file = False
+        past_log_file = []
+        if isToday == False:
+            past_log_file = self.log_file.fetch()
+        if not past_log_file == []:
+            last_entry_log_file = past_log_file[len(past_log_file)-1]
+            self.last_study_time, self.past_label = splice.splice(last_entry_log_file, ':', 'str')
+            self.lat_study_time = float(self.last_study_time)
+            self.delete_log_file = True
+        
+        self.log_file.save('', '*sameLN*')
+        log_file_list = self.log_file.fetch()
+        if log_file_list == None:
+            log_file_list = []
+        for i in log_file_list:
+            study_time, label = splice.splice(i, ':', 'str')
+            self.label_list.append(label)
+            self.time_list.append(float(study_time))
+        
+        if not log_file_list == []:
+            self.past_label = self.label_list[len(self.label_list)-1]
+            self.last_study_time = int(self.time_list[len(self.time_list)-1])
+        
         self.count_one = len(self.time_list)
         #the same thing in time list
         self.pages_finished_first = self.pages_finished
@@ -293,7 +275,7 @@ class workSession:
             self.recess = self.first_recess
 
         if float(self.recess) > 0:
-            opening_string = f'\n>> There is unused rest: {self.recess}\n'
+            opening_string = f'\n>> There is unused rest: {self.recess} minutes\n'
         else:
             opening_string = ''
 
@@ -489,25 +471,30 @@ class workSession:
             output_keys = list(cli_output.keys())
         self.start_session = False
         print_var = None
+        #input(output_keys)
+        error = False
         for command in output_keys:
             match command:
                 case 'error':
-                    prints.err(cli_output[command])
+                    prints.err(f'>> {cli_output[command]}')
+                    error = True
                 case 'label':
                     self.label = cli_output[command]
                     print_var = self.label
                 case 'same_label':
-                    if self.label_list:
-                        self.label = self.label_list[len(self.label_list)-1]
+                    if not self.past_label == None:
+                        self.label = self.past_label
                         print_var = self.label
                     else:
-                        prints.err('past label does not exist')
+                        error = True
+                        prints.err('>> past label does not exist')
                 case 'use_label':
                     if not self.recommended_label == None:
                         self.label = self.recommended_label
                         print_var = self.label
                     else:
-                        prints.err('label to use does not exist')
+                        prints.err('>> label to use does not exist')
+                        error = True
                 case 'time':
                     self.study_time = cli_output[command]
                     print_var = self.label
@@ -516,7 +503,8 @@ class workSession:
                         self.study_time = self.last_study_time
                         print_var = self.label
                     else:
-                        prints.err('past session does not exist')
+                        error = True
+                        prints.err('>> past session does not exist')
                 case 'diary_written_time':
                     self.comment_time = cli_output[command]
                     print_var = self.label
@@ -533,36 +521,43 @@ class workSession:
                     ready_to_start = True
                     if self.study_time == None:
                         ready_to_start = False
-                        prints.err('please enter study time')
+                        prints.err('>> please enter study time')
+                        error = True
                     if self.label == None:
                         ready_to_start = False
-                        prints.err('please enter label')
+                        prints.err('>> please enter label')
+                        error = True
                     if self.goal == None:
                         ready_to_start = False
-                        prints.err('please enter goal')
+                        prints.err('>> please enter goal')
+                        error = True
                     if self.add_point == None:
                         ready_to_start = False
-                        prints.err('please enter point system')
+                        prints.err('>> please enter point system')
                     if ready_to_start == True:
                         self.manage_settings_data.write_to_file()
                         return True
                 case 'string_to_add_label':
-                    if self.label_list:
-                        self.label = f'{self.label_list[len(self.label_list)-1]}{cli_output[command]}'
+                    if not self.past_label == None:
+                        self.label = f'{self.past_label}{cli_output[command]}'
                         print_var = self.label
                     else:
-                        prints.err('past label does not exist')
+                        prints.err('>> past label does not exist')
+                        error = True
                 case 'points':
                     self.add_point = cli_output[command]
                     print_var = cli_output[command]
                 case 'show_study_time':
+                    print('>> ', end='')
                     workSession.done_hour(self)
                 case 'show_study_list':
+                    print('>> ', end='')
                     workSession.show_list(self)
                 case 'show_points':
-                    print(self.current_points)
+                    print(f'>> {self.current_points}')
                 case 'end_study':
                     return False
+                
                 case 'volume':
                     self.volume = cli_output[command]
                     print_var = self.volume
@@ -579,21 +574,23 @@ class workSession:
                 case 'use_rest':
                     if self.recess >= 0 and self.count == self.count_one:
                         self.rest_time = self.recess
-                        print('rest safely pending usage')
+                        print('>> rest safely pending usage')
                         return 2
                 case 'goal':
                     self.goal = cli_output[command]
                     print_var = str(self.goal)
                 case 'goal_no_goal':
                     self.goal = 0
-                    print_var = 'None'
+                    print_var = 'goal is None'
                 case 'goal_same_goal':
-                    if not self.past_goal == None:
+                    if self.past_goal:
                        self.goal = self.past_goal
+                       print_var = str(self.goal)
                     else:
-                        prints.err('past goal does not exist')
+                        prints.err('>> past goal does not exist')
                 case 'print':
-                    print(print_string_true_false(temp_value, cli_output[command], print_var))
+                    if error == False:
+                        print(print_string_true_false(temp_value, cli_output[command], print_var))
 
     def initialize_session(self):
         self.count = self.count + 1
@@ -836,7 +833,8 @@ class workSession:
             if fin < 0:
                 print("\033[8m")
                 os.system('cls')
-                clear_input_buffer()
+                while msvcrt.kbhit():
+                    msvcrt.getch()
                 while True:
                     completed_goal, temp = goalEvaluator.evaluate_goal(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
                     if completed_goal == False and not self.goal == 0:
@@ -870,6 +868,7 @@ class workSession:
         self.time_ended_list.append(return_time())
         self.write_log_files()
         self.write_diary_file()
+        self.past_label = self.label
         self.label = None
         self.comment = None
         self.last_study_time = self.study_time
@@ -877,7 +876,7 @@ class workSession:
         self.add_point = None
         self.past_goal = self.goal
         self.goal = None
-        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words': self.new_words, 'correct': self.correct, 'incorrect': self.incorrect, 'pages_finished': self.pages_finished, 'last_study_time': self.last_study_time})
+        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words': self.new_words, 'correct': self.correct, 'incorrect': self.incorrect, 'pages_finished': self.pages_finished, 'past_goal': self.past_goal})
         os.system('cls')
 
     def handle_rest_time(self, recess):
@@ -900,7 +899,7 @@ class workSession:
     
     def rest_time_to_points(self, rest_time):
         if rest_time > 0:
-            self.current_points += (self.recess - self.rest_time) * self.REST_POINT_CONVERSION_RATE
+            self.current_points += (self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE
             self.manage_persistent_data.change_value({'current_points': self.current_points})
 
 
@@ -919,7 +918,6 @@ class workSession:
 
     def finish_program(self):
         self.write_diary_file()                
-        self.write_log_files()
         self.write_study_content_file()
         self.write_point_detail_file()
 
@@ -933,12 +931,31 @@ class workSession:
         print(self.current_points)
 
 
-
-
-        
-           
-##########################################上は全部関数等です######################################################################################################################################
 if __name__ == '__main__':
+
+    import math, msvcrt, os
+    from funcs import prints, num, file, data, work_ppl_rest, play_music, command_console
+
+    import datetime, time, win32api, subprocess
+    from time import sleep
+    from funcs import sendEmail, goalEvaluator, goalProgress, splice
+
+    print("\033[8m")
+    print("\033[0m")
+    os.system('cls')
+
+    Title = "WORK PPL"
+
+    os.system("title " + Title)
+
+    RED = '\033[31m'
+    END = '\033[0m'
+
+    now_start = datetime.datetime.today()
+    started_time = str(now_start.time())[:8]
+    today = str(now_start)[:10]
+
+
     session = workSession()
     first_rest, opening_string = session.extract_data_from_file()
     session.import_settings()

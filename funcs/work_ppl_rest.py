@@ -1,7 +1,8 @@
-from funcs import prints, sendEmail, play_music
+from funcs import prints, sendEmail
 from time import sleep
-import time, math, os, win32api
-from work_ppl import clear_input_buffer, END
+import time, math, os, win32api, msvcrt
+
+END = '\033[0m'
 
 class rest_elements:
     def __init__(self, POSTPONE_PENALTY, MAX_DELETION_PERCENTAGE, REST_TIME, last_session_show, REST_TIME_POINTS, REST_POINT_CONVERSION_RATE):
@@ -157,7 +158,8 @@ class main_rest_class:
             if stop < 0:
                 print("\033[8m")
                 os.system('cls')
-                clear_input_buffer()
+                while msvcrt.kbhit():
+                    msvcrt.getch()
                 while True:
                     if minimal_screen == 0:
                         rest_content.rest_ui('rest_ui', END)
@@ -192,4 +194,4 @@ class main_rest_class:
                         
                 if minus_point > 0:
                     return minus_point
-                return None
+                return 0

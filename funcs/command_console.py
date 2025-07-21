@@ -54,9 +54,9 @@ class command_executor:
         if preset_value == None:
             return_dict['label'] = command_value
         if not return_dict == {}:
-            return_dict['print'] = f'L\'{self.temp_value}'
+            return_dict['print'] = f'{self.temp_value}'
             return return_dict
-    
+
     def set_time(self, command_value):
         value_preset_content = {'same_content': {'same_time': None}, 'no_content': {}, 'use_content': {}}
         preset_value = None
@@ -67,7 +67,7 @@ class command_executor:
         elif num.isNum(command_value) == True:
             return {'time': float(command_value)}
         return {'error': 'time must be number'}
-        
+
     def set_time_label(self, command_value):
         value_preset_content = {'same_content': {'same_time': None, 'same_label': None}, 'no_content': {}, 'use_content': {}}
         preset_value = None
@@ -80,7 +80,7 @@ class command_executor:
             return_dict['label'] = command_value
             return_dict['time'] = float(command_value)
         if not return_dict == {}:
-            return_dict['print'] = f'L\'{self.temp_value}\nT\'{self.temp_value}'
+            return_dict['print'] = f'{self.temp_value}\n>> time = {self.temp_value}'
             return return_dict
         return {'error': 'time must be number'}
         
@@ -104,10 +104,10 @@ class command_executor:
         return {'start_session': None}
     
     def add_to_past_label(self, command_value):
-        return {'string_to_add_label': command_value}
+        return {'string_to_add_label': command_value, 'print': f'{self.temp_value}'}
     
     def set_points(self, command_value):
-        local_preset = {None: 'points_on', 'on': 'points_on', 'off': 'points_off'}
+        local_preset = {None: 'points_on', 'on': 'points_on', 'off': 'points_off', 'no': 'points_off'}
         preset_content = {'points_on': {'points': 1}, 'points_off': {'points': 0}}
         return turn_on('point system', command_value, local_preset, preset_content, self.temp_value)
     
@@ -129,7 +129,7 @@ class command_executor:
             return {'error': 'volume must be a number'}
         volume = float(command_value)
         if volume >= 0 and volume < 101:
-            return {'volume': int(command_value)}
+            return {'volume': int(command_value), 'print': f'volume = {self.temp_value}'}
         return {'error': 'volume must be within 0 and 100'}
     
     def change_settings(self, command_value):
@@ -139,8 +139,10 @@ class command_executor:
         
     def use_content(self, command_value):
         local_preset = {'unused rest': 'rest', 'rest': 'rest', 'reccomended label': 'label', 'label': 'label'}
+        comment_preset = {'rest': 'this would not print because rest returns be4 this comes', 
+                          'label': f'{self.temp_value}'}
         if command_value in local_preset:
-            return {f'use_{local_preset[command_value]}': None}
+            return {f'use_{local_preset[command_value]}': None, 'print': comment_preset[local_preset[command_value]]}
 
     def set_goal(self, command_value):
         return_dict = {}
@@ -156,7 +158,7 @@ class command_executor:
         if goal == None or goal == []:
             pass
         else:
-            return_dict['print'] = f'goal is {self.temp_value}'
+            return_dict['print'] = f'{self.temp_value}'
             return return_dict
 
 
@@ -202,5 +204,5 @@ class cli:
 
 if __name__ == '__main__':
     cli_test = cli('$')
-    cli_test.get_command('TL\'\\1')
+    cli_test.get_command('TL\'1')
     print(cli_test.execute_command())
