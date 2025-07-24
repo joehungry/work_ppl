@@ -3,7 +3,7 @@ import os, datetime, subprocess
 
 today = datetime.datetime.now()
 
-pointsFile = file.content('REPORT/python_hidden_file', 'CT_LS.txt')
+pointsFile = file.content('REPORT/python_hidden_file', 'CT_LS.txt', lock=True)
 persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'last_study_time':0, 'today': None}
 manage_persistent_data = data.manage(persistent_data, pointsFile)
 subprocess.check_call(["attrib","+H", 'REPORT\python_hidden_file\CT_LS.txt'])
@@ -11,8 +11,8 @@ extracted_value = manage_persistent_data.extract_from_file()
 originalPointNumber = float(extracted_value['current_points'])
 
 
-whatToDo = {'videoes in General':'ALL_VIDEOES', 'TV show (have seen this show before)':'TELEVISION', 'movie':'MOVIES', 'punishment': 'FUCK_YOU', 'YouTube for sleeping': 'SLEEPISH'}
-pointsDict = {'ALL_VIDEOES':1.5, 'REDDIT':.5, 'BADBAD':30, 'TELEVISION':1.2, 'MOVIES':.5, 'FUCK_YOU': originalPointNumber, 'SLEEPISH': .8}
+whatToDo = {'can impliment new feature': 'CODING', 'don\'t have to do anything toddy': 'NOTHING_DAY'}
+pointsDict = {'CODING': 100,  'NOTHING_DAY': 500}
 
 def subtractPonts(totalPoints, pointsToSubtract):
     if totalPoints >= pointsToSubtract:

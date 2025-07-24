@@ -25,7 +25,7 @@ extracted_value = manage_persistent_data.extract_from_file()
 originalPointNumber = float(extracted_value['current_points'])
 
 
-taskStreakFile = file.content('REPORT/python_hidden_file', 'taskStreak.txt')
+taskStreakFile = file.content('REPORT/python_hidden_file', 'taskStreak.txt', lock=True)
 taskStreakContent = taskStreakFile.fetch()
 
 taskStreakDict = {}

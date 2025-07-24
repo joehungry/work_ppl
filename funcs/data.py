@@ -25,7 +25,7 @@ class manage:
                 what_to_write += '\n'
 
         self.file_object.delete_file()
-        self.file_object.save(what_to_write, '*lock*')
+        self.file_object.save(what_to_write)
 
     def extract_from_file(self):
         raw_data = self.file_object.fetch()

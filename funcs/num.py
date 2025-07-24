@@ -64,7 +64,7 @@ def isNum(number):
 def dataType(number):
     if number == True or number == False:
         return 'Boolean'
-    if isInt(number) == False:
+    if isNum(number) == False:
         return 'notNum'
     if not '.' in str(number):
         return 'int'
@@ -76,4 +76,4 @@ def dataType(number):
 if __name__ == '__main__':
     print(numify('2024/10/7'))
     print(cap(6, 3))
-    print(isNum(True))
+    print(dataType('0.01'))

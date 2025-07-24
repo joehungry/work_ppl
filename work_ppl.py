@@ -112,24 +112,24 @@ class workSession:
 
         self.DEVIDE_POINT_BY = 0.7
 
-        persistent_data_file = file.content('REPORT\\logs', 'progress.txt')
-        settings_file = file.content('REPORT\\logs', 'settings.txt')
+        persistent_data_file = file.content('REPORT\\logs', 'progress.txt', lock=True)
+        settings_file = file.content('REPORT\\logs', 'settings.txt', lock=True)
         subprocess.check_call(["attrib","+H","REPORT\\logs"])
 
         persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'past_goal': None, 'today': None}
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
 
-        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False}
+        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\Settings.txt'])
 
 
         file.content(f'REPORT\\music')
-        self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt')
-        self.point_detail_file = file.content(f'REPORT\\log of points\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt')
-        self.study_content_file = file.content(f'REPORT\\log of studied content\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt')
-        self.log_file = file.content('REPORT\\logs', 'log.txt')
+        self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt', lock=True)
+        self.point_detail_file = file.content(f'REPORT\\log of points\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt', lock=True)
+        self.study_content_file = file.content(f'REPORT\\log of studied content\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt', lock=True)
+        self.log_file = file.content('REPORT\\logs', 'log.txt', lock=True)
 
     def done_hour(self):
         print()
@@ -137,25 +137,24 @@ class workSession:
         print(str(hour) + "時間：" + str(minute) + "分", str(second) + "秒")
 
 
-    def show_list(self):     
+    def show_list(self):
         list_num = -1
         if not len(self.time_list) > 0:
             print(None)
-        else:
-            print('_' * 47)
-            for i in range(len(self.time_list)):
-                list_num +=1
-                print()
-                print(str(list_num +1) + "回目(" + str(self.label_list[list_num]) + "):" + str(self.time_list[list_num]) + "分", end = '')
-                print()
-            print('_' * 47)
+            return 0
+        print('_' * 47)
+        for i in range(len(self.time_list)):
+            list_num +=1
+            print()
+            print(str(list_num +1) + "回目(" + str(self.label_list[list_num]) + "):" + str(self.time_list[list_num]) + "分", end = '')
+            print()
+        print('_' * 47)
 
     def AutoRest(self, recess):
         #どうやらrecess_timeは休憩時間を計算しているわけでなくて、前セッションの勉強時間を計算しているようです。だから、この式は、勉強時間(actual_study_time)を1500秒(25分)だと仮定したときに、最低5分の休憩を取ることができるように設定されているみたい？
         if (self.actual_study_time / 60) * 0.2 < recess:
             return (self.actual_study_time / 60) * 0.2
-        else:
-            return recess
+        return recess
 
     def write_study_content_file(self):
         what_to_write = f'\n{"_" * 39}'
@@ -170,7 +169,7 @@ class workSession:
             if self.add_point == 0:
                 what_to_write += ' *no point*'
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
-        self.study_content_file.save(what_to_write, '*lock*', '*sameLN*')
+        self.study_content_file.save(what_to_write, sameLN=True)
 
     def write_point_detail_file(self):
         hour, minute, second = seconds_to_hms(self.continuous_time - self.continuous_time_at_start)
@@ -182,7 +181,7 @@ class workSession:
         what_to_write += f'\n（ポイントの合計：{str(self.current_points)}）'
         what_to_write += f'\n{"-"*39}'
         what_to_write += f'\nended : {str(return_time())}'
-        self.point_detail_file.save(what_to_write, '*lock*', '*sameLN*')
+        self.point_detail_file.save(what_to_write, sameLN=True)
 
     def write_diary_file(self):
         if not self.comment == None:
@@ -191,16 +190,17 @@ class workSession:
             what_to_write = ''
             try:
                 self.diary_file.save(self.comment)
+            #this is a terrible way to do this. i know
             except ValueError:
                 for i in self.comment:
                     try:
                         what_to_write += str(i)
                     except ValueError:
                         what_to_write += '(?)'
-                self.diary_file.save(what_to_write, '*lock*')
+                self.diary_file.save(what_to_write)
                 what_to_write = ''
             what_to_write += '\n\n'
-            self.diary_file.save(what_to_write, '*lock*')
+            self.diary_file.save(what_to_write)
             self.comment_time == None    
             
     def write_log_files(self):   
@@ -209,7 +209,7 @@ class workSession:
             save_string += f'\n'
         if not len(self.time_list) == 0:
             save_string += f'{self.time_list[len(self.time_list)-1]}:{self.label_list[len(self.label_list)-1]}'
-            self.log_file.save(save_string, '*sameLN*')
+            self.log_file.save(save_string, sameLN=True)
             
 
 
@@ -250,7 +250,7 @@ class workSession:
             self.lat_study_time = float(self.last_study_time)
             self.delete_log_file = True
         
-        self.log_file.save('', '*sameLN*')
+        self.log_file.save('', sameLN=True)
         log_file_list = self.log_file.fetch()
         if log_file_list == None:
             log_file_list = []
@@ -921,7 +921,7 @@ class workSession:
                 return True
 
     def finish_program(self):
-        self.write_diary_file()                
+        self.write_diary_file()
         self.write_study_content_file()
         self.write_point_detail_file()
 
