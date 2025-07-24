@@ -247,3 +247,34 @@ This encourages a sustainable work pace rather than short bursts of effort.
 
 The application saves your progress and settings in hidden files within the `Python Report/python_hidden_file/` directory. This ensures that your total points, session history, and settings (like chosen music and volume) are carried over even if you close and reopen the program.
 
+## 7. The Diary: A Technical Deep Dive
+
+The diary entry system is one of the most complex features in this application. It was not designed as a simple text input, but as a **stateful, line-oriented editor** that operates via the command-line interface. This design provides granular control over the entry but requires a specific workflow.
+
+### Core Concepts
+
+*   **Modal System:** You cannot simply start typing your diary entry. You must first enter a specific mode. The command `D'write` puts you in "write mode," allowing you to insert new lines, while `D'change` puts you in "change mode," allowing you to overwrite existing lines. The application rejects text input if you are not in one of these modes.
+
+*   **Line-Oriented Editing:** A diary entry is not stored as a single block of text. Instead, it is managed as a list of individual strings (`self.diary_list`). Every line is a separate piece of data that must be added or modified with a specific command.
+
+*   **Manual Cursor Control:** The system uses an internal variable, `self.comment_index`, to act as a cursor, keeping track of the current line. You must use commands to move this index to the desired line before you can edit or delete it.
+
+
+### Example Workflow
+
+To write a simple two-line diary entry, you would need to:
+
+1.  Enter write mode: `>> D'write`
+2.  Add the first line: `>> D+'Line 1`
+3.  Add the second line: `>> D+'Line 2`
+
+To then change "Line 1" to "First line," the process would be:
+
+1.  Switch to change mode: `>> D'change`
+2.  Move the index to the first line: `>> D'0`
+3.  Overwrite the line: `>> D+'First line`
+4.  To remove the second line: `>> D-'`
+
+btw, you can also use `D't` to go before the first line, and `D'r` to go to the final element
+
+This highly structured approach is reminiscent of classic command-line editors like `ed` or `vi`. While it provides powerful and precise control, it is important to understand its complexity when using the diary feature.

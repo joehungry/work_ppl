@@ -48,7 +48,7 @@ def print_string_true_false(temp_value, string, temp_replacement):
     else:
         replacement = str(temp_replacement)
     split_string_list = string.split(temp_value)
-    return_var = '>> '
+    return_var = ''
     for ilen, i in enumerate(split_string_list):
         return_var += i
         if not ilen == len(split_string_list)-1:
@@ -96,6 +96,11 @@ class workSession:
         self.email_on = True
 
         self.comment = None
+        self.comment_command_type = None
+        self.comment_index = 0
+        self.diary_list = []
+        self.comment_time = None
+
 
         self.goal = None
         self.add_point = None
@@ -111,6 +116,8 @@ class workSession:
         self.time_ended_list = []
 
         self.DEVIDE_POINT_BY = 0.7
+
+
 
         persistent_data_file = file.content('REPORT\\logs', 'progress.txt', lock=True)
         settings_file = file.content('REPORT\\logs', 'settings.txt', lock=True)
@@ -188,19 +195,8 @@ class workSession:
             what_to_write = f'\n{str(self.comment_time)}　【{str(self.label_list[len(self.label_list)-1])}】\n{"-"*86}\n'
             self.diary_file.save(what_to_write)
             what_to_write = ''
-            try:
-                self.diary_file.save(self.comment)
+            self.diary_file.save(f'{self.comment}\n\n')
             #this is a terrible way to do this. i know
-            except ValueError:
-                for i in self.comment:
-                    try:
-                        what_to_write += str(i)
-                    except ValueError:
-                        what_to_write += '(?)'
-                self.diary_file.save(what_to_write)
-                what_to_write = ''
-            what_to_write += '\n\n'
-            self.diary_file.save(what_to_write)
             self.comment_time == None    
             
     def write_log_files(self):   
@@ -476,7 +472,7 @@ class workSession:
         for command in output_keys:
             match command:
                 case 'error':
-                    prints.err(f'>> {cli_output[command]}')
+                    prints.err(cli_output[command])
                     error = True
                 case 'label':
                     self.label = cli_output[command]
@@ -504,13 +500,58 @@ class workSession:
                         print_var = self.label
                     else:
                         error = True
-                        prints.err('>> past session does not exist')
+                        prints.err('past session does not exist')
                 case 'diary_written_time':
-                    self.comment_time = cli_output[command]
-                    print_var = self.label
+                    if self.comment_time == None:
+                        self.comment_time = cli_output[command]
+                        print_var = self.comment_time
                 case 'diary_content':
-                    self.comment = cli_output[command]
-                    print_var = self.label
+                        self.comment_command_type = cli_output[command]
+
+                case 'move_diary_index':
+                    if cli_output[command] == 'go_back_to_original_place':
+                        self.comment_index = len(self.diary_list)-1
+                    elif cli_output[command] == 'go_to_head_of_index':
+                        #bc it adds one in add_to_diary
+                        self.comment_index = -1
+                        print()
+                        return None
+                    elif int(cli_output[command]) >= len(self.diary_list):
+                        prints.err('index number is too large')
+                        return None
+                    else:
+                        self.comment_index = cli_output[command]
+                    print(self.diary_list[self.comment_index])
+
+                case 'add_to_diary':
+                    if self.comment_command_type == None:
+                        prints.err("execute D' command first")
+                    elif self.comment == None:
+                        self.comment = cli_output[command]
+                        self.diary_list.append(cli_output[command])
+                        print_var = self.comment
+                        self.comment_index = 0
+                        return None
+                    elif self.comment_command_type == 'write':
+                        self.diary_list.insert(self.comment_index+1, cli_output[command])
+                        self.comment_index += 1
+                    elif self.comment_command_type == 'change':
+                        self.diary_list[int(self.comment_index)] = cli_output[command]
+                    self.comment = '\n'.join(self.diary_list)
+                    print_var = self.comment
+                    
+                case 'remove_diary_index':
+                    if self.comment == None:
+                        prints.err('no comment yet')
+                        return None
+                    #elif self.comment_command_type != 'change':
+                    #    pass
+                    elif cli_output == None:
+                        pass
+                    elif len(self.diary_list) != 0:
+                        self.diary_list.pop(self.comment_index)
+                        self.comment = '\n'.join(self.diary_list)
+                        print_var = self.comment
                 case 'sound_on':
                     self.music_on = cli_output[command]
                     print_var = cli_output[command]
@@ -521,19 +562,19 @@ class workSession:
                     ready_to_start = True
                     if self.study_time == None:
                         ready_to_start = False
-                        prints.err('>> please enter study time')
+                        prints.err('please enter study time')
                         error = True
                     if self.label == None:
                         ready_to_start = False
-                        prints.err('>> please enter label')
+                        prints.err('please enter label')
                         error = True
                     if self.goal == None:
                         ready_to_start = False
-                        prints.err('>> please enter goal')
+                        prints.err('please enter goal')
                         error = True
                     if self.add_point == None:
                         ready_to_start = False
-                        prints.err('>> please enter point system')
+                        prints.err('please enter point system')
                     if ready_to_start == True:
                         self.manage_settings_data.write_to_file()
                         return True
@@ -542,22 +583,22 @@ class workSession:
                         self.label = f'{self.past_label}{cli_output[command]}'
                         print_var = self.label
                     else:
-                        prints.err('>> past label does not exist')
+                        prints.err('past label does not exist')
                         error = True
                 case 'points':
                     self.add_point = cli_output[command]
                     print_var = cli_output[command]
                 case 'show_study_time':
-                    print('>> ', end='')
                     workSession.done_hour(self)
                 case 'show_study_list':
-                    print('>> ', end='')
                     workSession.show_list(self)
                 case 'show_points':
-                    print(f'>> {self.current_points}')
+                    print(self.current_points)
+                case 'show_comment':
+                    for ilen, i in enumerate(self.diary_list):
+                        print(f'{ilen}. {i}')
                 case 'end_study':
                     return False
-                
                 case 'volume':
                     self.volume = cli_output[command]
                     print_var = self.volume
@@ -574,7 +615,7 @@ class workSession:
                 case 'use_rest':
                     if self.recess >= 0 and self.count == self.count_one:
                         self.rest_time = self.recess
-                        print('>> rest safely pending usage')
+                        print('rest safely pending usage')
                         return 2
                 case 'goal':
                     self.goal = cli_output[command]
@@ -587,7 +628,7 @@ class workSession:
                        self.goal = self.past_goal
                        print_var = str(self.goal)
                     else:
-                        prints.err('>> past goal does not exist')
+                        prints.err('past goal does not exist')
                 case 'print':
                     if error == False:
                         print(print_string_true_false(temp_value, cli_output[command], print_var))
@@ -874,7 +915,14 @@ class workSession:
         self.write_diary_file()
         self.past_label = self.label
         self.label = None
+
+
         self.comment = None
+        self.comment_command_type = None
+        self.comment_index = 0
+        self.diary_list = []
+        self.comment_time = None
+
         self.last_study_time = self.study_time
         self.study_time = None
         self.add_point = None

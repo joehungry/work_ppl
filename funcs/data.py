@@ -31,7 +31,7 @@ class manage:
         raw_data = self.file_object.fetch()
         return_dict = {}
         for i in raw_data:
-            returned_elements = file.fetchList(i, ':')
+            returned_elements = file.de_stringify_list(i, ':')
             key = returned_elements[0]
             value = returned_elements[1]
             if key in self.data_dictionary:
