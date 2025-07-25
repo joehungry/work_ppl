@@ -91,8 +91,6 @@ class workSession:
         self.recommended_label = None
 
         self.study_time = None
-
-        self.music_on = True
         self.email_on = True
 
         self.comment = None
@@ -127,7 +125,7 @@ class workSession:
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
 
-        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
+        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False, 'music_on': True}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\Settings.txt'])
 
@@ -231,6 +229,7 @@ class workSession:
         self.choose_music_study = extracted_dict['choose_music_study']
         self.choose_music_rest = extracted_dict['choose_music_rest']
         self.chose_music = extracted_dict['chose_music']
+        self.music_on = extracted_dict['music_on']
         
         self.label_list = []
         self.time_list = []
@@ -555,6 +554,7 @@ class workSession:
                 case 'sound_on':
                     self.music_on = cli_output[command]
                     print_var = cli_output[command]
+                    self.manage_settings_data.change_value({'music_on': self.music_on})
                 case 'email_on':
                     self.email_on = cli_output[command]
                     print_var = cli_output[command]
@@ -873,10 +873,10 @@ class workSession:
             fin = win32api.GetKeyState(0x60)
             if fin < 0:
                 print("\033[8m")
-                os.system('cls')
                 while msvcrt.kbhit():
                     msvcrt.getch()
                 while True:
+                    os.system('cls')
                     completed_goal, temp = goalEvaluator.evaluate_goal(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
                     if completed_goal == False and not self.goal == 0:
                         print("\033[0m" + "タスクがまだ完了していません。\n本当に", end='')
@@ -1036,12 +1036,11 @@ if __name__ == '__main__':
         sleep(0.45)
         session.session()
 
-        session.wrap_up_session()
         recess = session.adjust_value()
         session.handle_rest_time(recess)
         os.system('cls')
         continue_session = session.chceck_if_continue()
-        
+        session.wrap_up_session()
         os.system('cls')
         if continue_session == False:
             session.finish_program()
