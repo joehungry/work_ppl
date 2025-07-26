@@ -172,7 +172,7 @@ class command_executor:
     def set_goal(self, command_value):
         return_dict = {}
         goal = None
-        local_preset = {'\\n': 'no_goal', 'none': 'no_goal', 
+        local_preset = {'\\n': 'no_goal', 'none': 'no_goal', 'n': 'no_goal',
                         '\\s': 'same_goal', 's': 'same_goal', 'same': 'same_goal'}
         if command_value in local_preset:
             return_dict = {f'goal_{local_preset[command_value]}': None}

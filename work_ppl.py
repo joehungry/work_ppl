@@ -304,13 +304,16 @@ class workSession:
     
 
     def rest(self, time_of_rest):
+        self.manage_persistent_data.change_value({'recess_now': 0})
+        self.manage_persistent_data.write_to_file()
         rest_session = work_ppl_rest.main_rest_class()
         #? i think its past points
         rest_session.get_values(time_of_rest, self.rest_time_points, self.REST_POINT_CONVERSION_RATE, self.email_on, self.MAX_DELETION_PERCENTAGE, self.past_points, self.music_content, self.music_on)
         minus_points = rest_session.rest_func()
         if minus_points == 'crash':
-            self.manage_persistent_data.change_value({'current_points': 0})
             self.write_study_content_file()
+            self.manage_persistent_data.change_value({'current_points': 0})
+            self.manage_persistent_data.write_to_file()
             exit()
 
         self.past_points -= minus_points
@@ -328,10 +331,10 @@ class workSession:
                     print('\033[33m' + '総勉強時間モード' + END)
                 else:
                     print()
-                percentageStr = f'目標時間の{self.showPercentage}%が終了 ({self.bonusPointPercentage}倍ボーナス)\n{self.encouragementWord}'
-                prints.progress(int(progress))
-                print()
                 if not self.goal == 0:
+                    percentageStr = f'目標時間の{self.showPercentage}%が終了 ({self.bonusPointPercentage}倍ボーナス)\n{self.encouragementWord}'
+                    prints.progress(int(progress))
+                    print()
                     print('~~~~~~~')
                     print(percentageStr)
                     print('~~~~~~~')
@@ -382,7 +385,8 @@ class workSession:
                     os.system('cls')
                     print(END)
                     print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ')
-                    prints.progress(int(progress))
+                    if not self.goal == 0:
+                        prints.progress(int(progress))
                     print()
                     print()
                     print(f'{self.repeat_one_finish}', end='')
@@ -444,7 +448,7 @@ class workSession:
                 todayShow = todayRaw.strftime('%Y年%#m月%#d')
 
                 print("\033[0m" + f'{todayShow}日の最終スコアは：')
-                workSession.done_hour(self)
+                self.done_hour()
                 print()
                 print()
                 print("ポイントの合計：", self.current_points)
@@ -462,7 +466,7 @@ class workSession:
                     print("終わった章：" + str(self.pages_finished) + "章")
                     print() 
                 print()
-                workSession.show_list(self)
+                self.show_list()
 
     def cli_screen(self):
         temp_value = '$'
@@ -608,11 +612,14 @@ class workSession:
                     self.add_point = cli_output[command]
                     print_var = cli_output[command]
                 case 'show_study_time':
-                    workSession.done_hour(self)
+                    self.done_hour()
                 case 'show_study_list':
-                    workSession.show_list(self)
+                    self.show_list()
                 case 'show_points':
-                    print(self.current_points)
+                    if self.current_points >= self.past_points:
+                        print(self.current_points)
+                    elif self.current_points < self.past_points:
+                        print(self.past_points)
                 case 'show_goals':
                     print(str(self.goal))
                 case 'show_comment':
@@ -743,20 +750,20 @@ class workSession:
 
         goalCompletedPercentage, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
         
-        totl_tim_point = self.totl_tim_point * self.DEVIDE_POINT_BY
-        self.pointString = f'{totl_tim_point} points'
+        original_time_point = self.totl_tim_point * self.DEVIDE_POINT_BY
+        self.pointString = f'{original_time_point} points'
         if self.goal == None:
-            totl_tim_point_divided = totl_tim_point * JustInTimeDiv
+            totl_tim_point_divided = original_time_point * JustInTimeDiv
             if JustInTimeDiv != 1:
                 self.pointString += f' multiplied by {JustInTimeDiv} because you went over or under time'
         elif int(goalCompletedPercentage) == 100:
-            totl_tim_point_divided = totl_tim_point * self.bonusPointPercentage
+            totl_tim_point_divided = original_time_point * self.bonusPointPercentage
             if self.bonusPointPercentage == 1:
                 self.pointString += f', nothing else because you went over time'
             else:
                 self.pointString += f' multiplied by {self.bonusPointPercentage}'
         else:
-            totl_tim_point_divided = totl_tim_point * (goalCompletedPercentage/100)
+            totl_tim_point_divided = original_time_point * (goalCompletedPercentage/100)
             self.pointString += f' multiplied by {goalCompletedPercentage/100} because you didn\'t complete goal' 
         
         self.current_points =  totl_tim_point_divided + float(self.past_points)
@@ -790,19 +797,19 @@ class workSession:
 
     def session(self):
         while True:
-            workSession.calculate_time_and_point(self)
+            self.calculate_time_and_point()
 
             SWTMain = win32api.GetKeyState(0x67)
             if SWTMain < 0:
                 self.swich_ui = num.cap(self.swich_ui+1, 3)
                 self.print_minimal_ui = True
-                sleep(0.04)
+                sleep(0.1)
 
             if self.swich_ui == 2:
-                workSession.ui_screen(self, 'minimal_session_ui')
+                self.ui_screen('minimal_session_ui')
             else:
                 self.print_minimal_ui = False
-                workSession.ui_screen(self, 'session_ui')
+                self.ui_screen('session_ui')
                 
             one_finish = win32api.GetKeyState(0x64)
             if one_finish < 0:
@@ -912,7 +919,9 @@ class workSession:
                             self.print_minimal_ui = True
                         break
                     elif finish == '+' or finish == "y":
-                        workSession.calculate_time_and_point(self)
+                        self.calculate_time_and_point()
+                        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words': self.new_words, 'correct': self.correct, 'incorrect': self.incorrect, 'pages_finished': self.pages_finished, 'past_goal': self.goal})
+
                         os.system('cls')
                         return True
                     else:
@@ -925,13 +934,14 @@ class workSession:
         self.actual_study_time = self.the_time
         if not self.add_point == 0:
             self.continuous_time += self.the_time
+            self.manage_persistent_data.change_value({'continuous_time': self.continuous_time})
         self.time_list.append(self.the_time/60)
         self.label_list.append(self.label)
         self.time_ended_list.append(return_time())
+
         if self.delete_log_file == True:
             self.log_file.delete_file()
             subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
-
         self.write_log_files()
         self.write_diary_file()
         self.past_label = self.label
@@ -949,7 +959,6 @@ class workSession:
         self.add_point = None
         self.past_goal = self.goal
         self.goal = None
-        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words': self.new_words, 'correct': self.correct, 'incorrect': self.incorrect, 'pages_finished': self.pages_finished, 'past_goal': self.past_goal})
         os.system('cls')
 
     def handle_rest_time(self, recess):
@@ -958,7 +967,7 @@ class workSession:
         if recess <= 0:
             return 0
         while True:
-            workSession.ui_screen(self, 'ending_screen_ui')
+            self.ui_screen('ending_screen_ui')
             rest_time_points = CheckAnswer("何分休みますか？")
 
             rest_time_points = ReturnRest(rest_time_points, recess)
@@ -974,12 +983,13 @@ class workSession:
         if rest_time > 0:
             self.current_points += (self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE
             self.manage_persistent_data.change_value({'current_points': self.current_points})
+            self.manage_persistent_data.write_to_file()
 
 
     def chceck_if_continue(self):
+        self.manage_persistent_data.write_to_file()
         while True:
-            self.manage_persistent_data.write_to_file()
-            workSession.ui_screen(self, 'ending_screen_ui')
+            self.ui_screen('ending_screen_ui')
             print()
             print("続けますか？")
             end = input("[Enter / - (key)押す]")
@@ -995,7 +1005,7 @@ class workSession:
         self.write_point_detail_file()
 
         while True:
-            workSession.ui_screen(self, 'finished_study_ui')
+            self.ui_screen('finished_study_ui')
             ok = input("\033[8m")
             os.system('cls')
 
@@ -1028,7 +1038,6 @@ if __name__ == '__main__':
     started_time = str(now_start.time())[:8]
     today = str(now_start)[:10]
 
-
     session = workSession()
     first_rest, opening_string = session.extract_data_from_file()
     session.import_settings()
@@ -1056,12 +1065,11 @@ if __name__ == '__main__':
         session.initialize_session()
         sleep(0.45)
         session.session()
-
+        session.wrap_up_session()
         recess = session.adjust_value()
         session.handle_rest_time(recess)
         os.system('cls')
         continue_session = session.chceck_if_continue()
-        session.wrap_up_session()
         os.system('cls')
         if continue_session == False:
             session.finish_program()
