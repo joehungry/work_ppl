@@ -338,30 +338,32 @@ class workSession:
                     print()
                 print()
                 print('\033[32m' + '一章' + END + '終わったら"4/←"', end='')
+                print(f' ({progressDict['one_finish']['current']}', end='')
                 if not self.goal == 0:
-                    print(f' ({progressDict['one_finish']['current']}/{progressDict['one_finish']['required']})')
-                else:
-                    print(f' ({progressDict['one_finish']['current']})')
+                    print(f'/{progressDict['one_finish']['required']}', end='')
+                print(')')
 
                 print()
                 print('\033[32m' + '正答' + END + 'は"1/END"', end='')
+                print(f' ({progressDict['right']['current']}', end='')
                 if not self.goal == 0:
-                    print(f' ({progressDict['right']['current']}/{progressDict['right']['required']})')
-                else:
-                    print(f' ({progressDict['right']['current']})')
+                    print(f'/{progressDict['right']['required']}', end='')
+                print(')')
 
                 print()
                 print('\033[32m' + '不正答' + END +'は"2/↓"', end='')
+                print(f' ({progressDict['wrong']['current']}', end='')
                 if not self.goal == 0:
-                    print(f' ({progressDict['wrong']['current']}/{progressDict['right']['required']})')
-                else:
-                    print(f' ({progressDict['wrong']['current']})')
+                    print(f'/{progressDict['wrong']['required']}', end='')
+                print(')')
+
                 print()
                 print('\033[32m' + '新規' + END + 'は"3/pgDn"', end='')
+                print(f' ({progressDict['new']['current']}', end='')
                 if not self.goal == 0:
-                    print(f' ({progressDict['new']['current']}/{progressDict['right']['required']})')
-                else:
-                    print(f' ({progressDict['new']['current']})')
+                    print(f'/{progressDict['new']['required']}', end='')
+                print(')')
+
                 print()
                 print()
                 print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
@@ -377,20 +379,31 @@ class workSession:
             case 'minimal_session_ui':
                 if self.print_minimal_ui == True:
                     progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
-                    
                     os.system('cls')
                     print(END)
                     print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ')
                     prints.progress(int(progress))
                     print()
                     print()
-                    print(f'{self.pages_finished - self.pages_finished_first}/{progressDict['one_finish']['required']}章終わり')
+                    print(f'{self.repeat_one_finish}', end='')
+                    if not self.goal == 0:
+                        print(f'/{progressDict['one_finish']['required']}', end='')
+                    print('章終わり')
                     print()
-                    print(f'正答：{self.correct - self.past_correct_len}/{progressDict['right']['required']}個')
+                    print(f'正答：{self.repeat_right}', end='')
+                    if not self.goal == 0:
+                        print(f'/{progressDict['right']['required']}', end='')
+                    print('個')
                     print()
-                    print(f'不正答：{self.incorrect - self.past_incorrect_len}/{progressDict['wrong']['required']}個')
+                    print(f'誤答：{self.repeat_wrong}', end='')
+                    if not self.goal == 0:
+                        print(f'/{progressDict['wrong']['required']}', end='')
+                    print('個')
                     print()
-                    print(f'新規：{self.repeat_new}/{progressDict['new']['required']}個')
+                    print(f'新規：{self.repeat_new}', end='')
+                    if not self.goal == 0:
+                        print(f'/{progressDict['new']['required']}', end='')
+                    print('個')
                     #if minute < study_time: #Ln257
                     #    pass
                         
@@ -600,6 +613,8 @@ class workSession:
                     workSession.show_list(self)
                 case 'show_points':
                     print(self.current_points)
+                case 'show_goals':
+                    print(str(self.goal))
                 case 'show_comment':
                     for ilen, i in enumerate(self.diary_list):
                         print(f'{ilen}. {i}')

@@ -30,7 +30,7 @@ def breakdownParentheses(oringinalString):
 
 
 def breakdownGoalSingleInput(goalInput):
-    goalCommand = {"new": 'new', 'n': 'new', "correct": 'right', "c": 'right', "C": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right, wrong'], "sv": ['right', 'wrong'], "SV": ['right', 'wrong'], "task": 'one_finish', "t": 'one_finish', "T": 'one_finish'}
+    goalCommand = {"new": 'new', 'nw': 'new', 'n': 'new', "correct": 'right', "c": 'right', "C": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right, wrong'], "sv": ['right', 'wrong'], "SV": ['right', 'wrong'], "task": 'one_finish', "t": 'one_finish', "T": 'one_finish'}
 
     tempGoalName = None
     tempGoalQuota = None
