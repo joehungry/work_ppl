@@ -741,7 +741,7 @@ class workSession:
         elif self.last_study_time < CalTim - 5:
             JustInTimeDiv = self.last_study_time/CalTim
 
-        goalCompletedPercentage = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
+        goalCompletedPercentage, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
         
         totl_tim_point = self.totl_tim_point * self.DEVIDE_POINT_BY
         self.pointString = f'{totl_tim_point} points'
@@ -893,15 +893,15 @@ class workSession:
 
             fin = win32api.GetKeyState(0x60)
             if fin < 0:
-                print("\033[8m")
                 while msvcrt.kbhit():
                     msvcrt.getch()
                 while True:
                     os.system('cls')
                     progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
-                    if progress == 100 and not self.goal == 0:
-                        print("\033[0m" + "タスクがまだ完了していません。\n本当に", end='')
-                    print("\033[0m" + "終了しますか +/-")
+                    if progress != 100 and not self.goal == 0:
+                        print(progress)
+                        print("タスクがまだ完了していません。\n本当に", end='')
+                    print("終了しますか +/-")
                     finish = input(">> ")
                     if finish == "":
                         os.system('cls')
