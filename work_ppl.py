@@ -308,7 +308,7 @@ class workSession:
         #? i think its past points
         rest_session.get_values(time_of_rest, self.rest_time_points, self.REST_POINT_CONVERSION_RATE, self.email_on, self.MAX_DELETION_PERCENTAGE, self.past_points, self.music_content, self.music_on)
         minus_points = rest_session.rest_func()
-        if minus_points == True:
+        if minus_points == 'crash':
             self.manage_persistent_data.change_value({'current_points': 0})
             self.write_study_content_file()
             exit()
@@ -500,13 +500,16 @@ class workSession:
                     else:
                         error = True
                         prints.err('past session does not exist')
+
+                case 'overwrite_diary':
+                    self.comment_time = cli_output[command]
+                    self.comment =  cli_output[command]
+                    print_var = self.comment
                 case 'diary_written_time':
                     if self.comment_time == None:
                         self.comment_time = cli_output[command]
-                        print_var = self.comment_time
                 case 'diary_content':
                         self.comment_command_type = cli_output[command]
-
                 case 'move_diary_index':
                     if cli_output[command] == 'go_back_to_original_place':
                         self.comment_index = len(self.diary_list)-1

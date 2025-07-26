@@ -110,6 +110,9 @@ class command_executor:
         if command_value == '':
             return_string = ''
         return {'remove_diary_index': None}
+    
+    def overwrite_diary(self, command_value):
+        return {'overwrite_diary': command_value}
         
     def turn_sound_on(self, command_value):#make it print sound is on
         local_preset = {'on': 'sound_on', 'off': 'sound_off'}
@@ -186,8 +189,8 @@ class command_executor:
 
 class cli:
     def __init__(self, temp_value):
-        self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'change_diary_command_type', 
-                                         'D+': 'add_to_diary', 'D-': 'remove_diary_index',
+        self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'overwrite_diary', 'D+': 'change_diary_command_type', 
+                                         'D++': 'add_to_diary', 'D-': 'remove_diary_index',
                                          'S': 'turn_sound_on', 'TL': 'set_time_label', 'LT': 'set_time_label', 
                                          'p': 'set_points', 'P': 'set_points'}
         self.no_split_command_dict = {'p': 'set_points', 'P': 'set_points', 'start': 'start_session', '': 'start_session', 
@@ -202,7 +205,7 @@ class cli:
                                      'set_time_label': execute.set_time_label, 'set_points': execute.set_points, 'show_value': execute.show_value,
                                      'end_something': execute.end_something, 'change_sound_volume': execute.change_sound_volume,
                                      'change_settings': execute.change_settings, 'use_content': execute.use_content, 'set_goal': execute.set_goal,
-                                     'add_to_diary': execute.add_to_comment, 'remove_diary_index': execute.remove_diary_index}
+                                     'add_to_diary': execute.add_to_comment, 'remove_diary_index': execute.remove_diary_index, 'overwrite_diary': execute.overwrite_diary}
         self.command_key = None
         self.command_value = None
 
