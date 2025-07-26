@@ -1,51 +1,63 @@
-# Version 2.0 - Debugging Enabled
+# Version 3.0 - Now with Breakdown
 
-def get_goal_progress(parsed_goal_structure, session_data, indent=0):
-    indent_str = "  " * indent
-    #print(f"{indent_str}Entering get_goal_progress with: {parsed_goal_structure}")
-    #print(f"{indent_str}Session Data: {session_data}")
+# --- Helper functions from goalEvaluator.py ---
+def _get_requirements_recursive(goal):
+    """
+    Calculates the requirements for a goal.
+    """
+    if isinstance(goal, list) and len(goal) == 1 and isinstance(goal[0], list):
+        return _get_requirements_recursive(goal[0])
 
-    if isinstance(parsed_goal_structure, list):
-        or_group_progresses = []
-        for i, element in enumerate(parsed_goal_structure):
-            #print(f"{indent_str}  Processing element {i}: {element}")
-            if isinstance(element, list):
-                # This element is an AND group (or a nested OR/AND structure)
-                and_group_progresses = []
-                for j, condition in enumerate(element):
-                    #print(f"{indent_str}    Processing AND condition {j}: {condition}")
-                    and_group_progresses.append(get_goal_progress(condition, session_data, indent + 2))
-                
-                min_progress = min(and_group_progresses) if and_group_progresses else 0.0
-                ##print(f"{indent_str}  AND group progresses: {and_group_progresses}, min: {min_progress}")
-                or_group_progresses.append(min_progress)
-            elif isinstance(element, dict):
-                # This element is a single goal condition
-                single_progress = get_single_goal_progress(element, session_data, indent + 2)
-                #print(f"{indent_str}  Single goal progress: {single_progress}")
-                or_group_progresses.append(single_progress)
+    if isinstance(goal, dict):
+        reqs = {}
+        goal_names = goal.get('goalName', [])
+        goal_quota = goal.get('goalQuota')
+
+        if goal_quota == 'd' or goal_quota == 'done':
+            required = 1
+        else:
+            try:
+                required = int(goal_quota)
+            except (ValueError, TypeError):
+                return {}
+
+        all_vars_in_goal = []
+        for name_item in goal_names:
+            if isinstance(name_item, list):
+                all_vars_in_goal.extend(name_item)
             else:
-                #print(f"{indent_str}  Unexpected element type: {type(element)}")
-                or_group_progresses.append(0.0)
+                all_vars_in_goal.append(name_item)
 
-        max_progress = max(or_group_progresses) if or_group_progresses else 0.0
-        #print(f"{indent_str}OR group progresses: {or_group_progresses}, max: {max_progress}")
-        #print(f"{indent_str}Exiting get_goal_progress (list) with: {max_progress}")
-        return max_progress
+        for var in all_vars_in_goal:
+            reqs[var] = required
+        return reqs
 
-    elif isinstance(parsed_goal_structure, dict):
-        progress = get_single_goal_progress(parsed_goal_structure, session_data, indent + 1)
-        #print(f"{indent_str}Exiting get_goal_progress (dict) with: {progress}")
-        return progress
+    if isinstance(goal, list):
+        all_reqs = {}
+        for sub_goal in goal:
+            sub_reqs = _get_requirements_recursive(sub_goal)
+            for var, req_val in sub_reqs.items():
+                all_reqs[var] = max(all_reqs.get(var, 0), req_val)
+        return all_reqs
+    
+    return {}
 
-    #print(f"{indent_str}Exiting get_goal_progress (unexpected) with: 0.0")
-    return 0.0 # Default for unexpected input
+def _find_combined_goal_vars(goal):
+    """
+    Finds sets of variables that are part of a "combined" goal.
+    """
+    combined_sets = []
+    if isinstance(goal, dict):
+        goal_names = goal.get('goalName', [])
+        if len(goal_names) > 1 and all(isinstance(name, str) for name in goal_names):
+            combined_sets.append(set(goal_names))
+    elif isinstance(goal, list):
+        for sub_goal in goal:
+            combined_sets.extend(_find_combined_goal_vars(sub_goal))
+    return combined_sets
 
-def get_single_goal_progress(goal_dict, session_data, indent=0):
-    indent_str = "  " * indent
-    #print(f"{indent_str}Entering get_single_goal_progress with: {goal_dict}")
-    #print(f"{indent_str}Session Data: {session_data}")
-
+# --- Internal progress calculation functions ---
+def _calculate_single_goal_progress(goal_dict, session_data, indent=0):
     goal_names = goal_dict.get('goalName', [])
     goal_quota = goal_dict.get('goalQuota')
 
@@ -55,74 +67,154 @@ def get_single_goal_progress(goal_dict, session_data, indent=0):
         try:
             goal_quota = int(goal_quota)
         except (ValueError, TypeError):
-            #print(f"{indent_str}  Invalid goal_quota: {goal_quota}. Returning 0.0")
-            return 0.0 # Cannot calculate progress if quota is invalid
+            return 0.0
 
     if goal_quota <= 0:
-        #print(f"{indent_str}  Goal quota is <= 0. Returning 100.0")
-        return 100.0 # If quota is 0 or less, it's considered 100% complete
+        return 100.0
 
     current_total = 0
     for name in goal_names:
         if isinstance(name, list):
-            # Handles combined goals like [['right', 'wrong']]
             for sub_name in name:
-                value = session_data.get(sub_name, 0)
-                current_total += value
-                #print(f"{indent_str}    Combined goal: {sub_name}, value: {value}, current_total: {current_total}")
+                current_total += session_data.get(sub_name, 0)
         else:
-            value = session_data.get(name, 0)
-            current_total += value
-            #print(f"{indent_str}    Single goal: {name}, value: {value}, current_total: {current_total}")
+            current_total += session_data.get(name, 0)
 
     progress = (current_total / goal_quota) * 100.0
-    final_progress = min(progress, 100.0) # Cap at 100% even if exceeded
-    #print(f"{indent_str}  Calculated progress: {progress}, final: {final_progress}")
-    #print(f"{indent_str}Exiting get_single_goal_progress with: {final_progress}")
-    return final_progress
+    return min(progress, 100.0)
 
+def _calculate_progress_recursive(parsed_goal_structure, session_data, indent=0):
+    if isinstance(parsed_goal_structure, list):
+        is_and_group = all(isinstance(e, dict) for e in parsed_goal_structure)
+
+        if is_and_group:
+            total_current = 0
+            total_quota = 0
+            for goal_dict in parsed_goal_structure:
+                goal_names = goal_dict.get('goalName', [])
+                goal_quota_val = goal_dict.get('goalQuota')
+
+                if goal_quota_val == 'd' or goal_quota_val == 'done':
+                    goal_quota = 1
+                else:
+                    try:
+                        goal_quota = int(goal_quota_val)
+                    except (ValueError, TypeError):
+                        continue
+
+                if goal_quota < 0:
+                    continue
+
+                total_quota += goal_quota
+
+                for name in goal_names:
+                    if isinstance(name, list):
+                        for sub_name in name:
+                            total_current += session_data.get(sub_name, 0)
+                    else:
+                        total_current += session_data.get(name, 0)
+            
+            if total_quota <= 0:
+                return 100.0
+            
+            progress = (total_current / total_quota) * 100.0
+            return min(progress, 100.0)
+
+        or_group_progresses = []
+        for element in parsed_goal_structure:
+            if isinstance(element, list):
+                and_group_progresses = [_calculate_progress_recursive(condition, session_data, indent + 2) for condition in element]
+                or_group_progresses.append(min(and_group_progresses) if and_group_progresses else 0.0)
+            elif isinstance(element, dict):
+                or_group_progresses.append(_calculate_single_goal_progress(element, session_data, indent + 2))
+            else:
+                or_group_progresses.append(0.0)
+
+        return max(or_group_progresses) if or_group_progresses else 0.0
+
+    elif isinstance(parsed_goal_structure, dict):
+        return _calculate_single_goal_progress(parsed_goal_structure, session_data, indent + 1)
+
+    return 0.0
+
+# --- Main public function ---
+def get_goal_progress(parsed_goal_structure, session_data):
+    """
+    Calculates the goal progress percentage and provides a breakdown of requirements.
+    Returns a tuple: (progress_percentage, breakdown_dict)
+    """
+    progress = _calculate_progress_recursive(parsed_goal_structure, session_data)
+    
+    requirements = _get_requirements_recursive(parsed_goal_structure)
+    breakdown = {}
+    all_vars = set(session_data.keys()) | set(requirements.keys())
+    
+    for var in all_vars:
+        breakdown[var] = {
+            'required': requirements.get(var, 0),
+            'current': session_data.get(var, 0)
+        }
+        
+    combined_goal_sets = _find_combined_goal_vars(parsed_goal_structure)
+    for var_set in combined_goal_sets:
+        total_current = sum(session_data.get(var, 0) for var in var_set)
+        for var in var_set:
+            if var in breakdown:
+                breakdown[var]['current'] = total_current
+                
+    return progress, breakdown
+
+# --- Test Cases ---
 if __name__ == '__main__':
-    print("--- Test Cases for get_goal_progress (Version 2.0) ---")
-    import prints
+    print("--- Test Cases for evaluate_goal (with variable breakdown) ---")
+
     # Test Case 1: Simple Goal (task = d)
     parsed_goal_1 = [[{'goalName': ['one_finish'], 'goalQuota': 1}]]
-    session_data_1_0 = {'one_finish': 2, 'right': 0, 'wrong': 0, 'new': 0, 'sv': 0}
-    session_data_1_50 = {'one_finish': 0.5, 'right': 0, 'wrong': 0, 'new': 0, 'sv': 0}
-    session_data_1_100 = {'one_finish': 1, 'right': 0, 'wrong': 0, 'new': 0, 'sv': 0}
-    print(get_goal_progress(parsed_goal_1, session_data_1_0))
-    print(f"Test 1 (task = d) - 0%: {get_goal_progress(parsed_goal_1, session_data_1_0):.2f}%") # Expected: 0.00%
-    print(f"Test 1 (task = d) - 50%: {get_goal_progress(parsed_goal_1, session_data_1_50):.2f}%") # Expected: 50.00%
-    print(f"Test 1 (task = d) - 100%: {get_goal_progress(parsed_goal_1, session_data_1_100):.2f}%") # Expected: 100.00%
-    prints.progress(get_goal_progress(parsed_goal_1, session_data_1_0))
+    session_data_1_met = {'one_finish': 1, 'right': 0, 'wrong': 0, 'new': 0, 'sv': 0}
+    session_data_1_fail = {'one_finish': 0, 'right': 0, 'wrong': 0, 'new': 0, 'sv': 0}
+    
+    is_met, breakdown = get_goal_progress(parsed_goal_1, session_data_1_met)
+    print(f"Test 1 (task = d) - Met: {is_met}, Breakdown: {breakdown}") # Expected: True, {'one_finish': {'required': 1, 'current': 1}}
+
+    is_met, breakdown = get_goal_progress(parsed_goal_1, session_data_1_fail)
+    print(f"Test 1 (task = d) - Fail: {is_met}, Breakdown: {breakdown}") # Expected: False, {'one_finish': {'required': 1, 'current': 0}}
 
     # Test Case 2: AND condition (c = 2 and t = 1)
     parsed_goal_2 = [[{'goalName': ['right'], 'goalQuota': '2'}, {'goalName': ['one_finish'], 'goalQuota': '1'}]]
-    session_data_2_0 = {'right': 0, 'one_finish': 0, 'wrong': 0, 'new': 0, 'sv': 0}
-    session_data_2_partial = {'right': 1, 'one_finish': 0.5, 'wrong': 0, 'new': 0, 'sv': 0} # 50% of right, 50% of one_finish -> min is 50%
     session_data_2_met = {'right': 2, 'one_finish': 1, 'wrong': 0, 'new': 0, 'sv': 0}
-    print(f"Test 2 (c=2 and t=1) - 0%: {get_goal_progress(parsed_goal_2, session_data_2_0):.2f}%") # Expected: 0.00%
-    print(f"Test 2 (c=2 and t=1) - Partial: {get_goal_progress(parsed_goal_2, session_data_2_partial):.2f}%") # Expected: 50.00%
-    print(f"Test 2 (c=2 and t=1) - 100%: {get_goal_progress(parsed_goal_2, session_data_2_met):.2f}%") # Expected: 100.00%
+    session_data_2_fail_c = {'right': 1, 'one_finish': 1, 'wrong': 0, 'new': 0, 'sv': 0}
+    
+    is_met, breakdown = get_goal_progress(parsed_goal_2, session_data_2_met)
+    print(f"Test 2 (c=2 and t=1) - Met: {is_met}, Breakdown: {breakdown}") # Expected: True, {'right': {'required': 2, 'current': 2}, 'one_finish': {'required': 1, 'current': 1}}
+
+    is_met, breakdown = get_goal_progress(parsed_goal_2, session_data_2_fail_c)
+    print(f"Test 2 (c=2 and t=1) - Fail (c): {is_met}, Breakdown: {breakdown}") # Expected: False, {'right': {'required': 2, 'current': 1}, 'one_finish': {'required': 1, 'current': 1}}
 
     # Test Case 3: OR condition (c = 2 or x = 10)
     parsed_goal_3 = [[{'goalName': ['right'], 'goalQuota': '2'}], [{'goalName': ['wrong'], 'goalQuota': '10'}]]
-    session_data_3_0 = {'right': 0, 'one_finish': 0, 'wrong': 0, 'new': 0, 'sv': 0}
-    session_data_3_right_50 = {'right': 1, 'one_finish': 0, 'wrong': 0, 'new': 0, 'sv': 0} # Right is 50%, Wrong is 0% -> max is 50%
-    session_data_3_wrong_70 = {'right': 0, 'one_finish': 0, 'wrong': 7, 'new': 0, 'sv': 0} # Right is 0%, Wrong is 70% -> max is 70%
-    session_data_3_right_100 = {'right': 2, 'one_finish': 0, 'wrong': 0, 'new': 0, 'sv': 0}
-    print(f"Test 3 (c=2 or x=10) - 0%: {get_goal_progress(parsed_goal_3, session_data_3_0):.2f}%") # Expected: 0.00%
-    print(f"Test 3 (c=2 or x=10) - Right 50%: {get_goal_progress(parsed_goal_3, session_data_3_right_50):.2f}%") # Expected: 50.00%
-    print(f"Test 3 (c=2 or x=10) - Wrong 70%: {get_goal_progress(parsed_goal_3, session_data_3_wrong_70):.2f}%") # Expected: 70.00%
-    print(f"Test 3 (c=2 or x=10) - Right 100%: {get_goal_progress(parsed_goal_3, session_data_3_right_100):.2f}%") # Expected: 100.00%
+    session_data_3_met_c = {'right': 2, 'one_finish': 0, 'wrong': 0, 'new': 0, 'sv': 0}
+    session_data_3_met_x = {'right': 0, 'one_finish': 0, 'wrong': 10, 'new': 0, 'sv': 0}
+    session_data_3_fail = {'right': 1, 'one_finish': 0, 'wrong': 9, 'new': 0, 'sv': 0}
+    
+    is_met, breakdown = get_goal_progress(parsed_goal_3, session_data_3_met_c)
+    print(f"Test 3 (c=2 or x=10) - Met (c): {is_met}, Breakdown: {breakdown}") # Expected: True, {'right': {'required': 2, 'current': 2}, 'wrong': {'required': 10, 'current': 0}}
+
+    is_met, breakdown = get_goal_progress(parsed_goal_3, session_data_3_met_x)
+    print(f"Test 3 (c=2 or x=10) - Met (x): {is_met}, Breakdown: {breakdown}") # Expected: True, {'right': {'required': 2, 'current': 0}, 'wrong': {'required': 10, 'current': 10}}
+
+    is_met, breakdown = get_goal_progress(parsed_goal_3, session_data_3_fail)
+    print(f"Test 3 (c=2 or x=10) - Fail: {is_met}, Breakdown: {breakdown}") # Expected: False, {'right': {'required': 2, 'current': 1}, 'wrong': {'required': 10, 'current': 9}}
 
     # Test Case 4: Combined Goal (nw and c = 10)
     parsed_goal_4 = [[{'goalName': ['new', 'right'], 'goalQuota': '10'}]]
-    session_data_4_0 = {'new': 0, 'right': 0, 'wrong': 0, 'one_finish': 0, 'sv': 0}
-    session_data_4_partial = {'new': 3, 'right': 4, 'wrong': 0, 'one_finish': 0, 'sv': 0} # Total 7/10 = 70%
-    session_data_4_100 = {'new': 5, 'right': 5, 'wrong': 0, 'one_finish': 0, 'sv': 0}
-    print(f"Test 4 (nw and c = 10) - 0%: {get_goal_progress(parsed_goal_4, session_data_4_0):.2f}%") # Expected: 0.00%
-    print(f"Test 4 (nw and c = 10) - Partial: {get_goal_progress(parsed_goal_4, session_data_4_partial):.2f}%") # Expected: 70.00%
-    print(f"Test 4 (nw and c = 10) - 100%: {get_goal_progress(parsed_goal_4, session_data_4_100):.2f}%") # Expected: 100.00%
+    session_data_4_met = {'new': 5, 'right': 5, 'wrong': 0, 'one_finish': 0, 'sv': 0}
+    session_data_4_fail = {'new': 3, 'right': 6, 'wrong': 0, 'one_finish': 0, 'sv': 0} # Total 9
+    
+    is_met, breakdown = get_goal_progress(parsed_goal_4, session_data_4_met)
+    print(f"Test 4 (nw and c = 10) - Met: {is_met}, Breakdown: {breakdown}") # Expected: True, {'new': {'required': 10, 'current': 5}, 'right': {'required': 10, 'current': 5}, 'new_right_total': {'required': 10, 'current': 10}}
+
+    is_met, breakdown = get_goal_progress(parsed_goal_4, session_data_4_fail)
+    print(f"Test 4 (nw and c = 10) - Fail: {is_met}, Breakdown: {breakdown}") # Expected: False, {'new': {'required': 10, 'current': 3}, 'right': {'required': 10, 'current': 6}, 'new_right_total': {'required': 10, 'current': 9}}
 
     # Test Case 5: Complex Nested Goal (from your example)
     # (task = d or (c = 2 and task = 1 and x=0 or sv=5 or nw=1)) and (new = 2 or x = 10)
@@ -139,39 +231,49 @@ if __name__ == '__main__':
         [{'goalName': ['wrong'], 'goalQuota': 10}]
     ]
 
-    # The full complex goal is Part A AND Part B
-    # This is represented as a single OR group containing a single AND group,
-    # where that AND group contains part_A_parsed and part_B_parsed.
     complex_parsed_goal = [
         [
             part_A_parsed,
             part_B_parsed
         ]
     ]
-    print(f"\nComplex Parsed Goal Structure: {complex_parsed_goal}")
 
     # Session data to meet the complex goal (e.g., task=d AND new=2)
     session_data_complex_met_1 = {
         'one_finish': 1, 'right': 0, 'wrong': 0, 'new': 2, 'sv': 0
     }
-    print(f"Test 5 (Complex) - Met (task=d AND new=2): {get_goal_progress(complex_parsed_goal, session_data_complex_met_1):.2f}%") # Expected: 100.00%
+    is_met, breakdown = get_goal_progress(complex_parsed_goal, session_data_complex_met_1)
+    print(f"Test 5 (Complex) - Met (task=d AND new=2): {is_met}, Breakdown: {breakdown}") # Expected: True
 
     # Session data to meet the complex goal (e.g., (c=2 and t=1 and x=0) AND x=10)
     session_data_complex_met_2 = {
         'one_finish': 1, 'right': 2, 'wrong': 10, 'new': 0, 'sv': 0
     }
-    print(f"Test 5 (Complex) - Met ((c=2 and t=1 and x=0) AND x=10): {get_goal_progress(complex_parsed_goal, session_data_complex_met_2):.2f}%") # Expected: 100.00%
+    is_met, breakdown = get_goal_progress(complex_parsed_goal, session_data_complex_met_2)
+    print(f"Test 5 (Complex) - Met ((c=2 and t=1 and x=0) AND x=10): {is_met}, Breakdown: {breakdown}") # Expected: True
 
     # Session data to fail the complex goal (Part A fails, new=0)
     session_data_complex_fail_A = {
         'one_finish': 0, 'right': 0, 'wrong': 0, 'new': 0, 'sv': 0
     }
-    print(f"Test 5 (Complex) - Fail (Part A): {get_goal_progress(complex_parsed_goal, session_data_complex_fail_A):.2f}%") # Expected: 0.00% (or very low)
+    is_met, breakdown = get_goal_progress(complex_parsed_goal, session_data_complex_fail_A)
+    print(f"Test 5 (Complex) - Fail (Part A): {is_met}, Breakdown: {breakdown}") # Expected: False
 
     # Session data to fail the complex goal (Part B fails, new=1, wrong=9)
     session_data_complex_fail_B = {
         'one_finish': 1, 'right': 0, 'wrong': 9, 'new': 1, 'sv': 0
     }
-    print(f"Test 5 (Complex) - Fail (Part B): {get_goal_progress(complex_parsed_goal, session_data_complex_fail_B):.2f}%") # Expected: <100% (Part A met, Part B partial)
+    is_met, breakdown = get_goal_progress(complex_parsed_goal, session_data_complex_fail_B)
+    print(f"Test 5 (Complex) - Fail (Part B): {is_met}, Breakdown: {breakdown}") # Expected: False
 
     print("\n--- End Test Cases ---")
+
+    print()
+    print('my_test')
+
+    session_data = {'one_finish': 2, 'right': 0, 'wrong': 0, 'new': 0}
+    goal_test = [{'goalName': ['one_finish', 'right'], 'goalQuota': 2}, {'goalName': ['new'], 'goalQuota': 2}]
+    print(get_goal_progress(goal_test, session_data))
+    goal_test = [[{'goalName': ['new'], 'goalQuota': 2}], [{'goalName': ['one_finish'], 'goalQuota': 2}]]
+    test1, test3 = get_goal_progress(goal_test, session_data)
+    print(bool(test1 == 100))

@@ -30,7 +30,7 @@ def breakdownParentheses(oringinalString):
 
 
 def breakdownGoalSingleInput(goalInput):
-    goalCommand = {"new": 'new', "nw": 'new', "NW": 'new', "correct": 'right', "c": 'right', "C": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right, wrong'], "sv": ['right', 'wrong'], "SV": ['right', 'wrong'], "task": 'one_finish', "t": 'one_finish', "T": 'one_finish'}
+    goalCommand = {"new": 'new', 'n': 'new', "correct": 'right', "c": 'right', "C": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right, wrong'], "sv": ['right', 'wrong'], "SV": ['right', 'wrong'], "task": 'one_finish', "t": 'one_finish', "T": 'one_finish'}
 
     tempGoalName = None
     tempGoalQuota = None
@@ -220,5 +220,4 @@ def breakdownGoalInput(originalString, ComIsTrue):
 
 
 if __name__ == '__main__':
-    print(breakdownGoalInput('nw', 'nw'))
-    print(breakdownGoalInput('(task = d or (c = 2 and task = 1 and x=0 or sv=5 or nw=1)) and (new = 2 or x = 10)', 'ABCDE'))
+    print(breakdownGoalInput('new = 2 or t=2', 'ABCDE'))

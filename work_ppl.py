@@ -321,7 +321,7 @@ class workSession:
         match ui_type:
             case 'session_ui':#main_ui
                 print(END)
-                temp, progressDict = goalEvaluator.evaluate_goal(self.goal, goal_dict)
+                progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
 
                 print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ', end='')
                 if self.swich_ui == 1:
@@ -329,7 +329,7 @@ class workSession:
                 else:
                     print()
                 percentageStr = f'目標時間の{self.showPercentage}%が終了 ({self.bonusPointPercentage}倍ボーナス)\n{self.encouragementWord}'
-                prints.progress(int(goalProgress.get_goal_progress(self.goal, goal_dict)))
+                prints.progress(int(progress))
                 print()
                 if not self.goal == 0:
                     print('~~~~~~~')
@@ -376,12 +376,12 @@ class workSession:
 
             case 'minimal_session_ui':
                 if self.print_minimal_ui == True:
-                    temp, progressDict = goalEvaluator.evaluate_goal(self.goal, goal_dict)
+                    progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
                     
                     os.system('cls')
                     print(END)
                     print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ')
-                    prints.progress(int(goalProgress.get_goal_progress(self.goal, goal_dict)))
+                    prints.progress(int(progress))
                     print()
                     print()
                     print(f'{self.pages_finished - self.pages_finished_first}/{progressDict['one_finish']['required']}章終わり')
@@ -504,12 +504,15 @@ class workSession:
                 case 'overwrite_diary':
                     self.comment_time = cli_output[command]
                     self.comment =  cli_output[command]
+                    self.diary_list.append(cli_output[command])
                     print_var = self.comment
                 case 'diary_written_time':
                     if self.comment_time == None:
                         self.comment_time = cli_output[command]
+
                 case 'diary_content':
                         self.comment_command_type = cli_output[command]
+
                 case 'move_diary_index':
                     if cli_output[command] == 'go_back_to_original_place':
                         self.comment_index = len(self.diary_list)-1
@@ -880,8 +883,8 @@ class workSession:
                     msvcrt.getch()
                 while True:
                     os.system('cls')
-                    completed_goal, temp = goalEvaluator.evaluate_goal(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
-                    if completed_goal == False and not self.goal == 0:
+                    progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
+                    if progress == 100 and not self.goal == 0:
                         print("\033[0m" + "タスクがまだ完了していません。\n本当に", end='')
                     print("\033[0m" + "終了しますか +/-")
                     finish = input(">> ")
@@ -993,7 +996,7 @@ if __name__ == '__main__':
 
     import datetime, time, win32api, subprocess
     from time import sleep
-    from funcs import sendEmail, goalEvaluator, goalProgress, splice
+    from funcs import sendEmail, goalProgress, splice
 
     print("\033[8m")
     print("\033[0m")
