@@ -69,7 +69,7 @@ class command_executor:
         return {'error': 'time must be number'}
 
     def set_time_label(self, command_value):
-        value_preset_content = {'same_content': {'same_time': None, 'same_label': None}, 'no_content': {}, 'use_content': {}}
+        value_preset_content = {'same_content': {'same_label': None, 'same_time': None}, 'no_content': {}, 'use_content': {}}
         preset_value = None
         return_dict = {}
         if '\\' in command_value:
@@ -80,39 +80,36 @@ class command_executor:
             return_dict['label'] = command_value
             return_dict['time'] = float(command_value)
         if not return_dict == {}:
-            return_dict['print'] = f'{self.temp_value}\ntime = {self.temp_value}'
+            return_dict['print'] = f'{self.temp_value} {self.temp_value}分'
             return return_dict
         return {'error': 'time must be number'}
         
-    def change_diary_command_type(self, command_value):
+    def change_file_command_type(self, command_value):
         return_dict = {}
-        diary_type = {'write': 'write', 'w': 'write', 'change': 'change', 'c': 'change'} 
+        diary_type = {'write': 'write', 'w': 'write', 'change': 'change', 'c': 'change', 'save': 'save', 'sv': 'save'} 
         index_moving = {'back': 'go_back_to_original_place', 'r': 'go_back_to_original_place',
-                         'return': 'go_back_to_original_place', 'top': 'go_to_head_of_index', 't': 'go_to_head_of_index'}
-        today = datetime.datetime.now()
-        today_foratted = today.strftime('%Y-%m-%d %H:%M:%S')
+                         'return': 'go_back_to_original_place', 'top': 'go_to_head_of_index', 't': 'go_to_head_of_index', }
         type_preset_value = check_value_preset(command_value, diary_type)
         index_preset_vale = check_value_preset(command_value, index_moving)
         if not type_preset_value == None:
-            return_dict['diary_written_time'] = today_foratted
-            return_dict['diary_content'] = type_preset_value
+            return_dict['file_content'] = type_preset_value
         elif not index_preset_vale == None:
-            return_dict['move_diary_index'] = index_preset_vale
+            return_dict['move_file_index'] = index_preset_vale
         elif num.isInt(command_value):
-            return_dict['move_diary_index'] = int(command_value)
+            return_dict['move_file_index'] = int(command_value)
         if not return_dict == {}:
             return return_dict
     
-    def add_to_comment(self, command_value):
-        return {'add_to_diary': command_value}
+    def add_comment(self, command_value):
+        return {'add_comment': command_value}
     
-    def remove_diary_index(self, command_value):
-        if command_value == '':
-            return_string = ''
-        return {'remove_diary_index': None}
+    def remove_file_index(self, command_value):
+        return {'remove_file_index': None}
     
     def overwrite_diary(self, command_value):
-        return {'overwrite_diary': command_value}
+        today = datetime.datetime.now()
+        today_foratted = today.strftime('%Y-%m-%d %H:%M:%S')
+        return {'overwrite_diary': command_value, 'diary_written_time': today_foratted}
         
     def turn_sound_on(self, command_value):#make it print sound is on
         local_preset = {'on': 'sound_on', 'off': 'sound_off'}
@@ -140,7 +137,7 @@ class command_executor:
                          'study list': 'study_list', 'list': 'study_list',
                          'point': 'points', 'points': 'points',
                          'goal': 'goals', 'goals': 'goals', 'diary': 'comment', 
-                         'comment': 'comment', 'd': 'comment'}
+                         'comment': 'comment', 'file': 'file', 'f': 'file'}
         if command_value in local_preset:
             return {f'show_{local_preset[command_value]}': None}
     
@@ -178,34 +175,49 @@ class command_executor:
             return_dict = {f'goal_{local_preset[command_value]}': None}
             goal = True
         else:
-            goal, empty = goalLanguage.breakdownGoalInput(command_value, None)
+            goal = goalLanguage.breakdownGoalInput(command_value)
             return_dict = {'goal': goal}
         if goal == None or goal == []:
             pass
         else:
             return_dict['print'] = f'{self.temp_value}'
             return return_dict
+        
+    def set_filetype(self, command_value):
+        local_preset = {'goal': 'goal', 'g': 'goal', 'd': 'diary', 'diary': 'diary', 'none': 'none', 'free': 'none', 'n': 'none'}
+        if command_value in local_preset:
+            return {'filetype': local_preset[command_value]}
+        
+    def choose_file(self, command_value):
+        if '.' in command_value:
+            return {'filename': command_value}
+    
+    def choose_dir(self, command_value):
+        return {'filedir': command_value}
+
 
 
 class cli:
     def __init__(self, temp_value):
-        self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'overwrite_diary', 'D+': 'change_diary_command_type', 
-                                         'D++': 'add_to_diary', 'D-': 'remove_diary_index',
+        self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'overwrite_diary', 'F': 'change_file_command_type', 
+                                         'F+': 'add_comment', 'F-': 'remove_file_index',
                                          'S': 'turn_sound_on', 'TL': 'set_time_label', 'LT': 'set_time_label', 
                                          'p': 'set_points', 'P': 'set_points'}
         self.no_split_command_dict = {'p': 'set_points', 'P': 'set_points', 'start': 'start_session', '': 'start_session', 
-                                         'D-': 'remove_diary_index'}
+                                         'F-': 'remove_file_index'}
         self.space_split_command_dict = {'sound': 'turn_sound_on', 'email': 'turn_email_on', 'mail': 'turn_email_on',
                                          'show': 'show_value', 'end': 'end_something', 'volume': 'change_sound_volume',
-                                         'change': 'change_settings', 'use': 'use_content', 'goal': 'set_goal', 'g': 'set_goal'}
+                                         'change': 'change_settings', 'use': 'use_content', 'goal': 'set_goal', 'g': 'set_goal', 
+                                         'filetype': 'set_filetype', 'open': 'choose_file', 'dir': 'choose_dir'}
         execute = command_executor(temp_value)
-        self.command_content_dict = {'set_label': execute.set_label, 'set_time': execute.set_time, 'change_diary_command_type': execute.change_diary_command_type, 
+        self.command_content_dict = {'set_label': execute.set_label, 'set_time': execute.set_time, 'change_file_command_type': execute.change_file_command_type, 
                                      'turn_sound_on': execute.turn_sound_on, 'turn_email_on': execute.turn_email_on, 
                                      'start_session': execute.start_session, 'add_to_past_label': execute.add_to_past_label,
                                      'set_time_label': execute.set_time_label, 'set_points': execute.set_points, 'show_value': execute.show_value,
                                      'end_something': execute.end_something, 'change_sound_volume': execute.change_sound_volume,
                                      'change_settings': execute.change_settings, 'use_content': execute.use_content, 'set_goal': execute.set_goal,
-                                     'add_to_diary': execute.add_to_comment, 'remove_diary_index': execute.remove_diary_index, 'overwrite_diary': execute.overwrite_diary}
+                                     'add_comment': execute.add_comment, 'remove_file_index': execute.remove_file_index, 'overwrite_diary': execute.overwrite_diary,
+                                     'choose_file': execute.choose_file, 'choose_dir': execute.choose_dir, 'set_filetype': execute.set_filetype}
         self.command_key = None
         self.command_value = None
 

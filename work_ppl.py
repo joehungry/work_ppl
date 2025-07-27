@@ -39,20 +39,25 @@ def CheckAnswer(question):
             return answer
 
 def print_string_true_false(temp_value, string, temp_replacement):
-    if num.isNum(temp_replacement) == False:
-        replacement = temp_replacement
-    elif temp_replacement == True:
-        replacement = 'on'
-    elif temp_replacement == False:
-        replacement = 'off'
-    else:
-        replacement = str(temp_replacement)
+    replacement = []
+    for i in temp_replacement:
+        if num.isNum(i) == False:
+            replacement.append(i)
+        elif i == True:
+            replacement.append('on')
+        elif i == False:
+            replacement.append('off')
+        else:
+            replacement.append(str(i))
+
     split_string_list = string.split(temp_value)
     return_var = ''
+    replacement_index = 0
     for ilen, i in enumerate(split_string_list):
         return_var += i
         if not ilen == len(split_string_list)-1:
-            return_var += str(replacement)
+            return_var += str(replacement[replacement_index])
+            replacement_index += 1
     return return_var
 
 
@@ -93,10 +98,10 @@ class workSession:
         self.study_time = None
         self.email_on = True
 
-        self.comment = None
+        self.diary = None
         self.comment_command_type = None
         self.comment_index = 0
-        self.diary_list = []
+        self.comment_list = []
         self.comment_time = None
 
 
@@ -115,6 +120,9 @@ class workSession:
 
         self.DEVIDE_POINT_BY = 0.7
 
+        self.filetype = None
+        self.user_made_file_content = None
+
 
 
         persistent_data_file = file.content('REPORT\\logs', 'progress.txt', lock=True)
@@ -125,7 +133,7 @@ class workSession:
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
 
-        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False, 'music_on': True}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
+        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False, 'music_on': True, 'filename': None, 'filedir': None}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\Settings.txt'])
 
@@ -189,11 +197,11 @@ class workSession:
         self.point_detail_file.save(what_to_write, sameLN=True)
 
     def write_diary_file(self):
-        if not self.comment == None:
+        if not self.diary == None:
             what_to_write = f'\n{str(self.comment_time)}　【{str(self.label_list[len(self.label_list)-1])}】\n{"-"*86}\n'
             self.diary_file.save(what_to_write)
             what_to_write = ''
-            self.diary_file.save(f'{self.comment}\n\n')
+            self.diary_file.save(f'{self.diary}\n\n')
             #this is a terrible way to do this. i know
             self.comment_time == None    
             
@@ -224,12 +232,17 @@ class workSession:
         if self.recess == None:
             self.recess = 0
         self.past_points = extracted_dict['current_points']
+
         extracted_dict = self.manage_settings_data.extract_from_file()
         self.volume = extracted_dict['volume']
         self.choose_music_study = extracted_dict['choose_music_study']
         self.choose_music_rest = extracted_dict['choose_music_rest']
         self.chose_music = extracted_dict['chose_music']
         self.music_on = extracted_dict['music_on']
+
+        self.user_made_dir = extracted_dict['filedir']
+        self.user_made_file = extracted_dict['filename']
+
         
         self.label_list = []
         self.time_list = []
@@ -239,14 +252,17 @@ class workSession:
         past_log_file = []
         if isToday == False:
             past_log_file = self.log_file.fetch()
+            log_file_list = []
+        else:
+            log_file_list = self.log_file.fetch()
         if not past_log_file == []:
             last_entry_log_file = past_log_file[len(past_log_file)-1]
             self.last_study_time, self.past_label = splice.splice(last_entry_log_file, ':', 'str')
             self.lat_study_time = float(self.last_study_time)
             self.delete_log_file = True
         
-        self.log_file.save('', sameLN=True)
-        log_file_list = self.log_file.fetch()
+        #?what is the point of this???
+        #self.log_file.save('', sameLN=True)
         if log_file_list == None:
             log_file_list = []
         for i in log_file_list:
@@ -482,7 +498,7 @@ class workSession:
         else:
             output_keys = list(cli_output.keys())
         self.start_session = False
-        print_var = None
+        print_var = []
         #input(output_keys)
         error = False
         for command in output_keys:
@@ -492,95 +508,125 @@ class workSession:
                     error = True
                 case 'label':
                     self.label = cli_output[command]
-                    print_var = self.label
+                    print_var.append(self.label)
                 case 'same_label':
                     if not self.past_label == None:
                         self.label = self.past_label
-                        print_var = self.label
+                        print_var.append(self.label)
                     else:
                         error = True
                         prints.err('>> past label does not exist')
                 case 'use_label':
                     if not self.recommended_label == None:
                         self.label = self.recommended_label
-                        print_var = self.label
+                        print_var.append(self.label)
                     else:
                         prints.err('>> label to use does not exist')
                         error = True
                 case 'time':
                     self.study_time = cli_output[command]
-                    print_var = self.label
+                    print_var.append(self.study_time)
                 case 'same_time':
                     if not self.last_study_time == None:
-                        self.study_time = self.last_study_time
-                        print_var = self.label
+                        self.study_time = float(self.last_study_time)
+                        print_var.append(self.study_time)
                     else:
                         error = True
                         prints.err('past session does not exist')
 
                 case 'overwrite_diary':
-                    self.comment_time = cli_output[command]
-                    self.comment =  cli_output[command]
-                    self.diary_list.append(cli_output[command])
-                    print_var = self.comment
+                    self.diary =  cli_output[command]
+                    self.comment_list.append(self.diary)
+                    self.comment_index = len(self.comment_list)-1
+                    print_var.append(self.diary)
+
                 case 'diary_written_time':
                     if self.comment_time == None:
                         self.comment_time = cli_output[command]
 
-                case 'diary_content':
-                        self.comment_command_type = cli_output[command]
+                case 'filename':
+                    self.user_made_file = cli_output[command]
+                    self.manage_settings_data.change_value({'filename': cli_output[command]})
+                    self.user_made_file_content = file.content(self.user_made_dir, self.user_made_file)
+                    self.comment_list = self.user_made_file_content.fetch()
+                    self.comment_index = len(self.comment_list)-1
 
-                case 'move_diary_index':
+                case 'dirname':
+                    self.user_made_dir = cli_output[command]
+                    self.manage_settings_data.change_value({'dirname': cli_output[command]})
+
+                case 'filetype':
+                    self.filetype = cli_output[command]
+
+
+                case 'file_content':
+                    if self.filetype == None:
+                        prints.err('please specify filetype')
+                        return None
+                    if not self.filetype == 'diary' and self.user_made_file == None:
+                        prints.err('please specify file')
+                        return None
+                    self.comment_command_type = cli_output[command]
+
+                    #it saves my progress
+                    if not self.comment_command_type == 'save':
+                        pass
+                    elif self.filetype == 'diary':
+                        self.diary = '\n'.join(self.comment_list)
+                    elif self.filetype == 'goal':
+                        comment = [f'{ilen}.{i}' for ilen, i in enumerate(self.comment_list)]
+                        comment_string = '\n'.join(comment)
+                        self.user_made_file_content.save(comment_string, overwrite=True)
+                    elif self.filetype == 'none':
+                        comment_string = '\n'.join(self.comment_list)
+                        self.user_made_file_content.save(comment_string, overwrite=True)
+
+
+                case 'move_file_index':
                     if cli_output[command] == 'go_back_to_original_place':
-                        self.comment_index = len(self.diary_list)-1
+                        self.comment_index = len(self.comment_list)-1
                     elif cli_output[command] == 'go_to_head_of_index':
                         #bc it adds one in add_to_diary
                         self.comment_index = -1
                         print()
                         return None
-                    elif int(cli_output[command]) >= len(self.diary_list):
+                    elif int(cli_output[command]) >= len(self.comment_list):
                         prints.err('index number is too large')
                         return None
                     else:
                         self.comment_index = cli_output[command]
-                    print(self.diary_list[self.comment_index])
+                    print(self.comment_list[self.comment_index])
 
-                case 'add_to_diary':
+                case 'add_comment':
                     if self.comment_command_type == None:
-                        prints.err("execute D' command first")
-                    elif self.comment == None:
-                        self.comment = cli_output[command]
-                        self.diary_list.append(cli_output[command])
-                        print_var = self.comment
-                        self.comment_index = 0
-                        return None
+                        prints.err("execute F' command first")
+                    elif self.comment_list == None:
+                        prints.err('please write diary first')
                     elif self.comment_command_type == 'write':
-                        self.diary_list.insert(self.comment_index+1, cli_output[command])
+                        self.comment_list.insert(self.comment_index+1, cli_output[command])
                         self.comment_index += 1
                     elif self.comment_command_type == 'change':
-                        self.diary_list[int(self.comment_index)] = cli_output[command]
-                    self.comment = '\n'.join(self.diary_list)
-                    print_var = self.comment
+                        self.comment_list[int(self.comment_index)] = cli_output[command]
                     
-                case 'remove_diary_index':
-                    if self.comment == None:
+                case 'remove_file_index':
+                    if self.comment_list == None:
                         prints.err('no comment yet')
                         return None
                     #elif self.comment_command_type != 'change':
                     #    pass
                     elif cli_output == None:
                         pass
-                    elif len(self.diary_list) != 0:
-                        self.diary_list.pop(self.comment_index)
-                        self.comment = '\n'.join(self.diary_list)
-                        print_var = self.comment
+                    elif len(self.comment_list) != 0:
+                        self.comment_list.pop(self.comment_index)
+                        print_var.append(self.diary)
+
                 case 'sound_on':
                     self.music_on = cli_output[command]
-                    print_var = cli_output[command]
+                    print_var.append(cli_output[command])
                     self.manage_settings_data.change_value({'music_on': self.music_on})
                 case 'email_on':
                     self.email_on = cli_output[command]
-                    print_var = cli_output[command]
+                    print_var.append(cli_output[command])
                 case 'start_session':
                     ready_to_start = True
                     if self.study_time == None:
@@ -604,13 +650,13 @@ class workSession:
                 case 'string_to_add_label':
                     if not self.past_label == None:
                         self.label = f'{self.past_label}{cli_output[command]}'
-                        print_var = self.label
+                        print_var.append(self.label)
                     else:
                         prints.err('past label does not exist')
                         error = True
                 case 'points':
                     self.add_point = cli_output[command]
-                    print_var = cli_output[command]
+                    print_var.append(self.add_point)
                 case 'show_study_time':
                     self.done_hour()
                 case 'show_study_list':
@@ -623,13 +669,14 @@ class workSession:
                 case 'show_goals':
                     print(str(self.goal))
                 case 'show_comment':
-                    for ilen, i in enumerate(self.diary_list):
-                        print(f'{ilen}. {i}')
+                    print(self.diary)
+                case 'show_file':
+                    [print(f'{ilen}.{i}') for ilen, i in enumerate(self.comment_list)]
                 case 'end_study':
                     return False
                 case 'volume':
                     self.volume = cli_output[command]
-                    print_var = self.volume
+                    print_var.append(self.volume)
                     self.manage_settings_data.change_value({'volume': self.volume})
                 case 'change_sound':
                     temp_choose_music = self.music_content.chage_music()
@@ -639,7 +686,7 @@ class workSession:
 
                     self.music_content.import_change(cli_output[command], temp_choose_music)
                     self.manage_settings_data.change_value({cli_output[command]: choose_music})
-                    print_var = choose_music
+                    print_var.append(choose_music)
                 case 'use_rest':
                     if self.recess >= 0 and self.count == self.count_one:
                         self.rest_time = self.recess
@@ -647,14 +694,14 @@ class workSession:
                         return 2
                 case 'goal':
                     self.goal = cli_output[command]
-                    print_var = str(self.goal)
+                    print_var.append(str(self.goal))
                 case 'goal_no_goal':
                     self.goal = 0
-                    print_var = 'goal is None'
+                    print_var.append('goal is None')
                 case 'goal_same_goal':
                     if self.past_goal:
                        self.goal = self.past_goal
-                       print_var = str(self.goal)
+                       print_var.append(str(self.goal))
                     else:
                         prints.err('past goal does not exist')
                 case 'print':
@@ -719,7 +766,6 @@ class workSession:
         
         
         self.totl_tim_point = self.new_point + self.tim_point
-
         self.timePercentage = self.the_time/(self.study_time*60)
         self.showPercentage = int(self.timePercentage * 100)
         if self.timePercentage < .5:
@@ -906,7 +952,6 @@ class workSession:
                     os.system('cls')
                     progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
                     if progress != 100 and not self.goal == 0:
-                        print(progress)
                         print("タスクがまだ完了していません。\n本当に", end='')
                     print("終了しますか +/-")
                     finish = input(">> ")
@@ -948,10 +993,10 @@ class workSession:
         self.label = None
 
 
-        self.comment = None
+        self.diary = None
         self.comment_command_type = None
         self.comment_index = 0
-        self.diary_list = []
+        self.comment_list = []
         self.comment_time = None
 
         self.last_study_time = self.study_time
@@ -964,26 +1009,25 @@ class workSession:
     def handle_rest_time(self, recess):
         self.recess = recess
         self.manage_persistent_data.change_value({'current_points': self.current_points})
-        if recess <= 0:
+        if self.recess <= 0:
             return 0
         while True:
             self.ui_screen('ending_screen_ui')
-            rest_time_points = CheckAnswer("何分休みますか？")
+            true_rest_time = CheckAnswer("何分休みますか？")
 
-            rest_time_points = ReturnRest(rest_time_points, recess)
+            true_rest_time = ReturnRest(true_rest_time, self.recess)
 
-            if not rest_time_points == None:
-                self.manage_persistent_data.change_value({'recess_now': rest_time_points})
-                return rest_time_points
+            if not true_rest_time == None:
+                self.manage_persistent_data.change_value({'recess_now': true_rest_time})
+                return true_rest_time
             else:
                 prints.err('input error')
-                rest_time_points = 0 #ending_screenでのcrashを防ぐため。error.rest_time_points has no number to it
+                true_rest_time = 0 #ending_screenでのcrashを防ぐため。error.rest_time_points has no number to it
     
     def rest_time_to_points(self, rest_time):
-        if rest_time > 0:
-            self.current_points += (self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE
-            self.manage_persistent_data.change_value({'current_points': self.current_points})
-            self.manage_persistent_data.write_to_file()
+        self.current_points += (self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE
+        self.manage_persistent_data.change_value({'current_points': self.current_points})
+        self.manage_persistent_data.write_to_file()
 
 
     def chceck_if_continue(self):
@@ -1066,8 +1110,9 @@ if __name__ == '__main__':
         sleep(0.45)
         session.session()
         session.wrap_up_session()
-        recess = session.adjust_value()
-        session.handle_rest_time(recess)
+        full_recess = session.adjust_value()
+        recess = session.handle_rest_time(full_recess)
+        session.rest_time_to_points(recess)
         os.system('cls')
         continue_session = session.chceck_if_continue()
         os.system('cls')
@@ -1085,4 +1130,3 @@ if __name__ == '__main__':
         if recess > 0:
             sleep(0.3)
             session.rest(recess)
-            session.rest_time_to_points(recess)

@@ -53,8 +53,7 @@ def breakdownGoalSingleInput(goalInput):
         goalNameList = []
     for i in tempGoalNameList:
         if not i in goalCommand:
-            goalNameList = []
-            break
+            return None, None
         else:
             goalNameList.append(goalCommand[i])
         if tempGoalQuota == 'd' or tempGoalQuota == 'done':
@@ -67,6 +66,7 @@ def breakdownGoalSingleInput(goalInput):
 def mergeConnectedElements(originalString):
     tokens = []
     tokenMergeList = []
+    #connects the finds the incorrect elements and saves what is incorrect (f if both sides have space l if left side has space, r if right side has space) and the index.
     for ilen, i in enumerate(originalString):
         if i == '=':
             tokenMergeList.append(f'f{ilen-1}')
@@ -76,7 +76,7 @@ def mergeConnectedElements(originalString):
             tokenMergeList.append(f'r{ilen}')
 
 
-    #connects elements if '=' in there so, "a", "=", "b" would become "a=b"
+    #connects elements, if '=' in there so, "a", "=", "b" would become "a=b"
     skip = 0
     tokens = []
     positionList = [int(i[1:]) for i in tokenMergeList]
@@ -85,7 +85,9 @@ def mergeConnectedElements(originalString):
         if not ilen in positionList:
             pass
         else:
+            #gets the mergetype from list by getting the position
             mergeType = tokenMergeList[positionList.index(ilen)][0]
+
 
         if mergeType == None and not skip == 0:
             skip -= 1
@@ -107,23 +109,28 @@ def mergeConnectedElements(originalString):
     
     completedTokens = []
     saveIndex = None
+    tempVar = ''
     for ilen, i in enumerate(tokens):
         if i == '(':
-            saveIndex = ilen+1 #bc i dont need to save '(', i just need the variable names
+            saveIndex = ilen+1 #bc it will break when '(' is in it when there's two variable names
+            completedTokens.append('(')
         elif ')=' in i and saveIndex != None:#bc if )=1 is there that means that the variables are treated in the same place
-            tempVar = ''
-            for num in range(saveIndex, ilen):#ts messy af i know, but its just cecking if 
+            for num in range(saveIndex, ilen+1):#ts messy af i know, but its just checking if  #future me here, i added +1 in ilen so that it deletes '('. it gives out errors if you keep it in
                 completedTokens.pop(len(completedTokens)-1)#this just pops the last index in completedTokens bc you dont need the last 'num' amount of indexes, bc i join it here
-                if not tokens[num] == 'and' and not tokens[num] == 'or':
+                if num == ilen:#i have this so that it ignores the last run of this. i only added the last run to delete one of the values, not to add anything
+                    pass
+                elif not tokens[num] == 'and' and not tokens[num] == 'or':
                     tempVar += tokens[num]
                     if not num == ilen-1:
                         tempVar += ','
             garbage, goalNumber = splice.splice(i, '=', 'str')
             tempVar += f'={goalNumber}'
             completedTokens.append(tempVar)
+        elif tokens[ilen-1] == '(':
+            #ok so i have this so that i can catch the ( i missed up there 
+            completedTokens.append(i)
         else:
             completedTokens.append(i)
-
     return completedTokens
 
 def breakdownAndOr(tokens):
@@ -141,20 +148,20 @@ def breakdownAndOr(tokens):
     parsed_groups = []
     for group in and_groups:
         if not group: continue
-        # If a group is a list, it's a nested structure from parentheses
+        # If a group contains a list, it's a nested structure from parentheses
         if isinstance(group[0], list):
-            parsed_groups.append(group[0])
+            parsed_groups.extend(group[0])
         else:
             # It's a simple command like 'c=2'
             goalName, goalQuota = breakdownGoalSingleInput(" ".join(group))
+            if goalName == None:
+                return None
             if goalName:
                 parsed_groups.append({'goalName': goalName, 'goalQuota': goalQuota})
-
     return parsed_groups
 
 
-def breakdownGoalInput(originalString, ComIsTrue):
-    ComIsTrue = ComIsTrue
+def breakdownGoalInput(originalString):
     stirng = originalString.replace('(', ' ( ').replace(')', ' ) ')
     tokensRaw = splice.toList(stirng, ' ', 'str')
     tokensRaw = [i for i in tokensRaw if not i == '']
@@ -168,8 +175,7 @@ def breakdownGoalInput(originalString, ComIsTrue):
         elif token == ')':
             # End of a nesting level
             if len(stack) < 2:
-                ComIsTrue = None
-                break
+                return None
             # Pop the completed group, parse it, and append it to the parent level
             finished_group = stack.pop()
             # Process the 'or' logic within the group
@@ -182,7 +188,6 @@ def breakdownGoalInput(originalString, ComIsTrue):
                 else:
                     current_or_group.append(item)
             or_groups.append(breakdownAndOr(current_or_group))
-            
             # Simplify if it's not a real 'or' group
             if len(or_groups) == 1:
                 stack[-1].append(or_groups[0])
@@ -194,8 +199,8 @@ def breakdownGoalInput(originalString, ComIsTrue):
             stack[-1].append(token)
 
     if len(stack) != 1:
-        ComIsTrue = None
-
+        return None
+    
     # Final processing of the top-level string
     final_tokens = stack[0]
     or_groups = []
@@ -210,9 +215,9 @@ def breakdownGoalInput(originalString, ComIsTrue):
 
     # Final simplification
     if len(or_groups) == 1:
-        return or_groups[0], ComIsTrue
+        return or_groups[0]
     else:
-        return or_groups, ComIsTrue
+        return or_groups
 
 
 
@@ -220,4 +225,6 @@ def breakdownGoalInput(originalString, ComIsTrue):
 
 
 if __name__ == '__main__':
-    print(breakdownGoalInput('new = 2 or t=2', 'ABCDE'))
+    #print(breakdownGoalInput('(t and c = 2) and y= 5'))
+    #print(breakdownGoalInput('t and (c = 2 and x= 5)'))
+    print(breakdownGoalInput('(t and c) = 10'))

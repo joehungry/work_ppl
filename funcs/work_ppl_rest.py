@@ -104,10 +104,10 @@ class main_rest_class:
         while True:
             rest_content.calculate_time()
             if minimal_screen == 0:
-                rest_content.rest_ui('rest_ui', '"\033[1m"')
+                rest_content.rest_ui('rest_ui', '\033[1m')
             elif clear_screen == 0:
                 os.system('cls')
-                rest_content.rest_ui('minimal_rest_ui', '"\033[1m"')
+                rest_content.rest_ui('minimal_rest_ui', '\033[1m')
                 clear_screen= 1
             is_exit = rest_content.calculate_penalty_exit()
             if is_exit == True:
@@ -131,14 +131,14 @@ class main_rest_class:
             elif self.use_music == 1 and minimal_screen == 1:
                 rest_finished = 1
                 os.system('cls')
-                rest_content.rest_ui('minimal_rest_ui', '"\033[1m"')
+                rest_content.rest_ui('minimal_rest_ui', '\033[1m')
                 print(0, 'ポイント引かれます')
                 self.MUSIC.play()
                 self.use_music = 0
             elif minimal_screen == 1:
                 rest_finished = 1
                 os.system('cls')
-                rest_content.rest_ui('minimal_rest_ui', '"\033[1m"')
+                rest_content.rest_ui('minimal_rest_ui', '\033[1m')
                 print(0, 'ポイント引かれます')
             elif self.use_music == 1:
                 print(f'{(self.last_session_show * self.MAX_DELETION_PERCENTAGE) - minus_point}')
