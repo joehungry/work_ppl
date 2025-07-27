@@ -18,3 +18,9 @@ available filetypes
 
 
 omg this shit sucks
+
+
+how to write time
+`T'<minute>`
+`>> T'4*h 10`
+`time = 250 (4h and 10 minutes)`

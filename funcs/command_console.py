@@ -14,6 +14,42 @@ def check_value_preset(command, value_preset_dict):
     return None
     
 
+def check_time_value(time_value):
+    time_list = time_value.split(' ')
+    return_list = []
+    skip = 0
+    for ilen, i in enumerate(time_list):
+        if skip != 0:
+            skip -= 1
+        #bc i need three elements of a list to do the next step, i just tell the program to not bother
+        elif time_list[len(time_list)-1] == i or time_list[len(time_list)-2] == i:
+            return_list.append(i)
+        #makes element one (1*h is one element)
+        elif time_list[ilen+1] == '*':
+            print(f'work bitch: {i}')
+            return_list.append(''.join([i, time_list[ilen+1], time_list[ilen+2]]))
+            skip = 2
+        else:
+            return_list.append(i)
+
+    return_time = 0
+    for i in return_list:
+        if '*' in i:
+            temp_number, unit = splice.splice(i, '*', 'str')
+            number = float(temp_number)
+        else:
+            number = float(i)
+            unit = 'm'
+        if num.isNum(number) == False:
+            pass
+        elif unit == 'm':
+            return_time += number
+        elif unit == 'h':
+            return_time += number*60
+        elif unit == 's':
+            return_time += number/60
+    return return_time
+
 def splice_command(splice_sign, command_input, command_dict):
     temp_command_key = None
     command_key = None
@@ -62,10 +98,14 @@ class command_executor:
         preset_value = None
         if '\\' in command_value:
             preset_value = check_value_preset(command_value[1:], self.value_preset_dict)
+        if '*' in command_value:
+            command_value = check_time_value(command_value)
         if not preset_value == None:
             return value_preset_content[preset_value]
-        elif num.isNum(command_value) == True:
-            return {'time': float(command_value)}
+        elif num.isNum(command_value) == False:
+            pass
+        elif not command_value == 0:
+            return {'time': float(command_value), 'print': f'{self.temp_value}分'}
         return {'error': 'time must be number'}
 
     def set_time_label(self, command_value):
@@ -244,7 +284,5 @@ class cli:
 
 if __name__ == '__main__':
     cli_test = cli('$')
-    cli_test.get_command('D\'write')
-    print(cli_test.execute_command())
-    cli_test.get_command('D\'r')
+    cli_test.get_command('T\'1 * h 10 15*s')
     print(cli_test.execute_command())

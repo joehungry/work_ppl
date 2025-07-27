@@ -272,7 +272,7 @@ class workSession:
         
         if not log_file_list == []:
             self.past_label = self.label_list[len(self.label_list)-1]
-            self.last_study_time = int(self.time_list[len(self.time_list)-1])
+            self.last_study_time = float(self.time_list[len(self.time_list)-1])
         
         self.count_one = len(self.time_list)
         #the same thing in time list
@@ -328,7 +328,7 @@ class workSession:
         minus_points = rest_session.rest_func()
         if minus_points == 'crash':
             self.write_study_content_file()
-            self.manage_persistent_data.change_value({'current_points': 0})
+            self.manage_persistent_data.change_value({'current_points': self.past_points*self.MAX_DELETION_PERCENTAGE})
             self.manage_persistent_data.write_to_file()
             exit()
 
@@ -574,7 +574,7 @@ class workSession:
                     elif self.filetype == 'diary':
                         self.diary = '\n'.join(self.comment_list)
                     elif self.filetype == 'goal':
-                        comment = [f'{ilen}.{i}' for ilen, i in enumerate(self.comment_list)]
+                        comment = [f'{ilen+1}.{i}' for ilen, i in enumerate(self.comment_list)]
                         comment_string = '\n'.join(comment)
                         self.user_made_file_content.save(comment_string, overwrite=True)
                     elif self.filetype == 'none':
@@ -790,27 +790,27 @@ class workSession:
         
         elif self.last_study_time > CalTim + 5:
             JustInTimeDiv = CalTim/self.last_study_time
-            
+            JustInTimeStr = 'over time'
         elif self.last_study_time < CalTim - 5:
             JustInTimeDiv = self.last_study_time/CalTim
-
-        goalCompletedPercentage, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
+            JustInTimeStr = 'under time'
         
         original_time_point = self.totl_tim_point * self.DEVIDE_POINT_BY
         self.pointString = f'{original_time_point} points'
-        if self.goal == None:
+        if self.goal == 0:
             totl_tim_point_divided = original_time_point * JustInTimeDiv
             if JustInTimeDiv != 1:
-                self.pointString += f' multiplied by {JustInTimeDiv} because you went over or under time'
-        elif int(goalCompletedPercentage) == 100:
+                self.pointString += f' multiplied by {JustInTimeDiv} because you went {JustInTimeStr}'
+        elif self.progress == 100:
             totl_tim_point_divided = original_time_point * self.bonusPointPercentage
             if self.bonusPointPercentage == 1:
                 self.pointString += f', nothing else because you went over time'
             else:
                 self.pointString += f' multiplied by {self.bonusPointPercentage}'
         else:
-            totl_tim_point_divided = original_time_point * (goalCompletedPercentage/100)
-            self.pointString += f' multiplied by {goalCompletedPercentage/100} because you didn\'t complete goal' 
+            print()
+            totl_tim_point_divided = original_time_point * (self.progress/100)
+            self.pointString += f' multiplied by {self.progress/100} because you didn\'t complete goal' 
         
         self.current_points =  totl_tim_point_divided + float(self.past_points)
         self.manage_persistent_data.change_value({'current_points': self.current_points})
@@ -950,8 +950,8 @@ class workSession:
                     msvcrt.getch()
                 while True:
                     os.system('cls')
-                    progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
-                    if progress != 100 and not self.goal == 0:
+                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
+                    if self.progress != 100 and not self.goal == 0:
                         print("タスクがまだ完了していません。\n本当に", end='')
                     print("終了しますか +/-")
                     finish = input(">> ")
@@ -980,7 +980,7 @@ class workSession:
         if not self.add_point == 0:
             self.continuous_time += self.the_time
             self.manage_persistent_data.change_value({'continuous_time': self.continuous_time})
-        self.time_list.append(self.the_time/60)
+        self.time_list.append(self.study_time)
         self.label_list.append(self.label)
         self.time_ended_list.append(return_time())
 
@@ -1025,12 +1025,15 @@ class workSession:
                 true_rest_time = 0 #ending_screenでのcrashを防ぐため。error.rest_time_points has no number to it
     
     def rest_time_to_points(self, rest_time):
-        self.current_points += (self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE
-        self.manage_persistent_data.change_value({'current_points': self.current_points})
-        self.manage_persistent_data.write_to_file()
+        if self.recess > rest_time:
+            self.current_points += (self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE
+            self.pointString += f' and {(self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE} points added for giving up {(self.recess - rest_time)} minutes of rest time'
+            self.manage_persistent_data.change_value({'current_points': self.current_points})
+            self.manage_persistent_data.write_to_file()
 
 
-    def chceck_if_continue(self):
+    def chceck_if_continue(self, recess):
+        self.recess = recess
         self.manage_persistent_data.write_to_file()
         while True:
             self.ui_screen('ending_screen_ui')
@@ -1114,7 +1117,7 @@ if __name__ == '__main__':
         recess = session.handle_rest_time(full_recess)
         session.rest_time_to_points(recess)
         os.system('cls')
-        continue_session = session.chceck_if_continue()
+        continue_session = session.chceck_if_continue(recess)
         os.system('cls')
         if continue_session == False:
             session.finish_program()
