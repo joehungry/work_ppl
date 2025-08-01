@@ -25,7 +25,7 @@ class manage:
                 what_to_write += '\n'
 
         self.file_object.delete_file()
-        self.file_object.save(what_to_write)
+        self.file_object.save(what_to_write, lock=True)
 
     def extract_from_file(self):
         raw_data = self.file_object.fetch()
@@ -51,4 +51,4 @@ if __name__ == '__main__':
     print(test.extract_from_file())
 
     #test.write_to_file()
-    #print(test.extract_from_file())
+    print(test.extract_from_file())

@@ -9,13 +9,16 @@ def seconds_to_hms(seconds):
 def return_time():
     now = (datetime.datetime.today())
     time_right_now = str(now.time())[:8]
-    return time_right_now        
+    return time_right_now
 
-def keypres(amount, what):
-    variable = what + 1
+def keypres(amount):
     print(f'+{amount}')
     sleep(0.1)
-    return variable
+
+def goal_add_value(amount, goal_name):
+    if goal_name == None:
+        return 0
+    return amount
         
 
 #質問をし答えをVariableに記録します
@@ -106,6 +109,7 @@ class workSession:
 
 
         self.goal = None
+        self.temp_past_goal = None
         self.add_point = None
 
         self.start_session = None
@@ -128,15 +132,25 @@ class workSession:
         self.name_correct = None
         self.name_incorrect = None
 
+        self.pages_finished_dict = {}
+        self.new_num_dict = {}
+        self.correct_num_dict = {}
+        self.incorrect_num_dict = {}
+
+        self.pages_finished_session = 0
+        self.new_num_session = 0
+        self.correct_num_session = 0
+        self.incorrect_num_session = 0
+
+
 
         persistent_data_file = file.content('REPORT\\logs', 'progress.txt', lock=True)
         settings_file = file.content('REPORT\\logs', 'settings.txt', lock=True)
         subprocess.check_call(["attrib","+H","REPORT\\logs"])
 
-        persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'past_goal': None, 'last_study_time': None, 'label_base': None, 'today': None}
+        persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words_full': 0, 'correct_full': 0, 'incorrect_full': 0, 'pages_finished_full': 0, 'recess_now': 0, 'past_goal': None, 'last_study_time': None, 'label_base': None, 'today': None}
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
-
         settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False, 'music_on': True, 'filename': None, 'filedir': None}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\Settings.txt'])
@@ -179,19 +193,20 @@ class workSession:
         # and subtracting the length of how much i have logged my progress after i started the program
         session_nunber = len(self.time_list) - len(self.time_started_list)-1
 
-        for time_code_start, time_code_end in zip(self.time_started_list, self.time_ended_list):
+
+        for time_code_start, time_code_end, name_task, name_new, name_correct, name_incorrect in zip(self.time_started_list, self.time_ended_list, self.pages_finished_dict, self.new_num_dict, self.correct_num_dict, self.incorrect_num_dict):
             session_nunber +=1
 
             what_to_write += f'\n{time_code_start} - {time_code_end}'
             what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(self.time_list[session_nunber])}分'
-            if self.pages_finished > 0:
-                what_to_write += f"{self.name_task}: {self.pages_finished}個"
-            if self.new_words > 0:
-                what_to_write += f"{self.name_new}: {self.new_words}個"
-            if self.correct > 0:
-                what_to_write += f"{self.name_correct}: {self.correct}個"
-            if self.incorrect > 0:
-                what_to_write += f"{self.name_incorrect}: {self.incorrect}個"
+            if name_task != None:
+                what_to_write += f"{name_task}: {self.pages_finished_dict[name_task]}個"
+            if name_new != None:
+                what_to_write += f"{name_new}: {self.new_num_dict[name_new]}個"
+            if name_correct != None:
+                what_to_write += f"{name_correct}: {self.correct_num_dict[name_correct]}個"
+            if name_incorrect != None:
+                what_to_write += f"{name_incorrect}: {self.incorrect_num_dict[name_incorrect]}個"
             if self.add_point == 0:
                 what_to_write += ' *no point*'
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
@@ -235,13 +250,31 @@ class workSession:
         elif extracted_dict['today'] == today:
             isToday = True
         self.continuous_time = extract_if_True(extracted_dict['continuous_time'], isToday)
-        self.new_words = extract_if_True(extracted_dict['new_words'], isToday)
-        self.correct = extract_if_True(extracted_dict['correct'], isToday)
-        self.incorrect = extract_if_True(extracted_dict['incorrect'], isToday)
-        self.pages_finished = extract_if_True(extracted_dict['pages_finished'], isToday)
+        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time}) #its going to overwrite the thing in the file to the thing in the program, so when i end study brefore the first session starts, i need it to know the actual value
+
+        self.new_words_full = extract_if_True(extracted_dict['new_words_full'], isToday)
+        self.manage_persistent_data.change_value({'new_words_full': self.new_words_full})
+
+        self.correct_full = extract_if_True(extracted_dict['correct_full'], isToday)
+        self.manage_persistent_data.change_value({'correct_full': self.correct_full})
+
+        self.incorrect_full = extract_if_True(extracted_dict['incorrect_full'], isToday)
+        self.manage_persistent_data.change_value({'incorrect_full': self.incorrect_full})
+
+        self.pages_finished_full = extract_if_True(extracted_dict['pages_finished_full'], isToday)
+        self.manage_persistent_data.change_value({'pages_finished_full': self.pages_finished_full})
+
         self.recess = extract_if_True(extracted_dict['recess_now'], isToday)
+        self.manage_persistent_data.change_value({'recess_now': self.recess})
+
         self.past_goal = extract_if_True(extracted_dict['past_goal'], isToday)
+        self.manage_persistent_data.change_value({'past_goal': self.past_goal})
+
         self.label_base = extract_if_True(extracted_dict['label_base'], isToday)
+        self.manage_persistent_data.change_value({'label_base': self.label_base})
+
+        self.manage_persistent_data.change_value({'today': today})
+
         if self.recess == None:
             self.recess = 0
         self.past_points = extracted_dict['current_points']
@@ -287,9 +320,9 @@ class workSession:
         
         self.count_one = len(self.time_list)
         #the same thing in time list
-        self.pages_finished_first = self.pages_finished
-        self.past_correct_len = self.correct
-        self.past_incorrect_len = self.incorrect
+        self.pages_finished_first = self.pages_finished_full
+        self.past_correct_len = self.correct_full
+        self.past_incorrect_len = self.incorrect_full
         self.continuous_time_at_start = self.continuous_time
         self.last_session_at_start = self.past_points
         self.count = self.count_one
@@ -301,7 +334,6 @@ class workSession:
         else:
             opening_string = ''
 
-        self.manage_persistent_data.change_value({'today': today})
         return self.recess, opening_string
     
     def import_settings(self):
@@ -347,7 +379,7 @@ class workSession:
         self.manage_persistent_data.change_value({'current_points': self.past_points})
     
     def ui_screen(self, ui_type):
-        goal_dict = {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new} #this is here because it doesn't work if i directly put it in the variable wtf why
+        goal_dict = {'one_finish': self.pages_finished_session, 'right': self.correct_num_session, 'wrong': self.incorrect_num_session, 'new': self.new_num_session} #this is here because it doesn't work if i directly put it in the variable wtf why
         match ui_type:
             case 'session_ui':#main_ui
                 print(END)
@@ -366,33 +398,49 @@ class workSession:
                     print(percentageStr)
                     print('~~~~~~~')
                     print()
-                print()
-                print('\033[32m' + self.name_pages_finished + END + 'は"4/←"', end='')
-                print(f' ({progressDict['one_finish']['current']}', end='')
-                if not self.goal == 0:
+                if self.name_task != None:
+                    print()
+                    print('\033[32m' + self.name_task + END + 'は"4/←"', end='')
+                    print(f' ({progressDict['one_finish']['current']}', end='')
+                if self.goal == 0:
+                    pass
+                elif self.name_task != None:
                     print(f'/{progressDict['one_finish']['required']}', end='')
-                print(')')
+                if self.name_task != None:
+                    print(')')
 
-                print()
-                print('\033[32m' + self.name_correct + END + 'は"1/END"', end='')
-                print(f' ({progressDict['right']['current']}', end='')
-                if not self.goal == 0:
+                if self.name_correct != None:
+                    print()
+                    print('\033[32m' + self.name_correct + END + 'は"1/END"', end='')
+                    print(f' ({progressDict['right']['current']}', end='')
+                if self.goal == 0:
+                    pass
+                elif self.name_correct != None:
                     print(f'/{progressDict['right']['required']}', end='')
-                print(')')
+                if self.name_correct != None:
+                    print(')')
 
-                print()
-                print('\033[32m' + self.name_incorrect + END +'は"2/↓"', end='')
-                print(f' ({progressDict['wrong']['current']}', end='')
-                if not self.goal == 0:
+                if self.name_incorrect != None:
+                    print()
+                    print('\033[32m' + self.name_incorrect + END +'は"2/↓"', end='')
+                    print(f' ({progressDict['wrong']['current']}', end='')
+                if self.goal == 0:
+                    pass
+                elif self.name_incorrect != None:
                     print(f'/{progressDict['wrong']['required']}', end='')
-                print(')')
+                if self.name_incorrect != None:
+                    print(')')
 
-                print()
-                print('\033[32m' + self.name_new_words + END + 'は"3/pgDn"', end='')
-                print(f' ({progressDict['new']['current']}', end='')
-                if not self.goal == 0:
+                if self.name_new != None:
+                    print()
+                    print('\033[32m' + self.name_new + END + 'は"3/pgDn"', end='')
+                    print(f' ({progressDict['new']['current']}', end='')
+                if self.goal == 0:
+                    pass
+                elif self.name_new != None:
                     print(f'/{progressDict['new']['required']}', end='')
-                print(')')
+                if self.name_new != None:
+                    print(')')
 
                 print()
                 print()
@@ -415,29 +463,36 @@ class workSession:
                     if not self.goal == 0:
                         prints.progress(int(progress))
                     print()
-                    print()
-                    print(f'{self.repeat_one_finish}', end='')
-                    if not self.goal == 0:
+                    if self.name_task != None:
+                        print()
+                        print(f'{self.name_task}：{self.pages_finished_session}', end='')
+                    if self.goal == 0:
+                        pass
+                    elif self.name_task != None:
                         print(f'/{progressDict['one_finish']['required']}', end='')
-                    print('章終わり')
-                    print()
-                    print(f'正答：{self.repeat_right}', end='')
-                    if not self.goal == 0:
+
+                    if self.name_correct != None:
+                        print()
+                        print(f'{self.name_correct}：{self.correct_num_session}', end='')
+                    if self.goal == 0:
+                        pass
                         print(f'/{progressDict['right']['required']}', end='')
-                    print('個')
-                    print()
-                    print(f'誤答：{self.repeat_wrong}', end='')
-                    if not self.goal == 0:
+
+                    if self.name_incorrect != None:
+                        print()
+                        print(f'誤答：{self.incorrect_num_session}', end='')
+                    if self.goal == 0:
+                        pass
+                    elif self.name_incorrect != None:
                         print(f'/{progressDict['wrong']['required']}', end='')
-                    print('個')
-                    print()
-                    print(f'新規：{self.repeat_new}', end='')
-                    if not self.goal == 0:
+                    
+                    if self.name_new != None:
+                        print()
+                        print(f'新規：{self.new_num_session}', end='')
+                    if self.goal == 0:
+                        pass
+                    elif self.name_new != None:
                         print(f'/{progressDict['new']['required']}', end='')
-                    print('個')
-                    #if minute < study_time: #Ln257
-                    #    pass
-                        
                     print("\033[8m")
                     self.print_minimal_ui = False
 
@@ -480,20 +535,15 @@ class workSession:
                 print()
                 print("ポイントの合計：", self.current_points)
                 print()
-             
-                print()
-                if self.new_words > 0:
-                    print(f"NEW：" + str(self.new_words) + "個")
-                if self.correct > 0:
-                    print(f"RIGHT：" + str(self.correct) + "個")
-                if self.incorrect > 0:
-                    print(f"WRONG：" + str(self.incorrect) + "個")
-                print()
-                print()
-
-                if self.pages_finished > 0:
-                    print("TASK：" + str(self.pages_finished))
-                    print() 
+                if self.pages_finished_full > 0:
+                    print("TASK：" + str(self.pages_finished_full))
+                if self.new_words_full > 0:
+                    print(f"NEW：" + str(self.new_words_full) + "個")
+                if self.correct_full > 0:
+                    print(f"RIGHT：" + str(self.correct_full) + "個")
+                if self.incorrect_full > 0:
+                    print(f"WRONG：" + str(self.incorrect_full) + "個")
+                print() 
                 print()
                 self.show_list()
 
@@ -681,10 +731,10 @@ class workSession:
                         prints.err('choose name for new')
                     elif 'right' in goals and self.name_correct == None:
                         ready_to_start = False
-                        prints.err('choose name for correct')
+                        prints.err('choose name for correct_full')
                     elif 'wrong' in goals and self.name_incorrect == None:
                         ready_to_start = False
-                        prints.err('choose name for incorrect')
+                        prints.err('choose name for incorrect_full')
                     elif ready_to_start == True:
                         self.manage_settings_data.write_to_file()
                         return True
@@ -739,15 +789,21 @@ class workSession:
                        print_var.append(str(self.goal))
                     else:
                         prints.err('past goal does not exist')
+                case 'goal_prompt':
+                    self.temp_past_goal = cli_output[command]
                         
                 case 'name_correct':
                     self.name_correct = cli_output[command]
+                    print_var.append(cli_output[command])
                 case 'name_incorrect':
                     self.name_incorrect = cli_output[command]
+                    print_var.append(cli_output[command])
                 case 'name_task':
                     self.name_task = cli_output[command]
+                    print_var.append(cli_output[command])
                 case 'name_new':
                     self.name_new = cli_output[command]
+                    print_var.append(cli_output[command])
 
                 case 'print':
                     if error == False:
@@ -757,11 +813,11 @@ class workSession:
         self.count = self.count + 1
         self.minute = 0
         self.tim_point = 0
-        self.repeat_one_finish = 0
-        self.repeat_right = 0
-        self.repeat_wrong = 0
-        self.repeat_new = 0
-        self.past_correct_len = self.correct
+        self.pages_finished_session = 0
+        self.correct_num_session = 0
+        self.incorrect_num_session = 0
+        self.new_num_session = 0
+        self.past_correct_len = self.correct_full
         self.session_time_finished = False
         self.the_time = 0
         self.swich_ui = 0
@@ -903,32 +959,40 @@ class workSession:
                 self.ui_screen('session_ui')
                 
             one_finish = win32api.GetKeyState(0x64)
-            if one_finish < 0:
-                self.pages_finished = keypres(1, self.pages_finished)
+            if self.name_task == None:
+                pass
+            elif one_finish < 0:
+                self.pages_finished_session += goal_add_value(1, self.name_task)
                 self.print_minimal_ui = True
-                self.repeat_one_finish += 1
                 self.finished_content_list.append('one_finish')
+                keypres(1)
 
             right = win32api.GetKeyState(0x61)
-            if right < 0:                            
-                self.correct = keypres(1, self.correct)
-                self.repeat_right += 1
+            if self.name_correct == None:
+                pass
+            elif right < 0:                            
+                self.correct_num_session += goal_add_value(1, self.name_correct)
                 self.print_minimal_ui = True
                 self.finished_content_list.append('right')
+                keypres(1)
 
             wrong = win32api.GetKeyState(0x62)
-            if wrong < 0:
-                self.incorrect = keypres(1, self.incorrect)
-                self.repeat_wrong += 1
+            if self.name_incorrect == None:
+                pass
+            elif wrong < 0:
+                self.incorrect_num_session += goal_add_value(1, self.name_incorrect)
                 self.print_minimal_ui = True
                 self.finished_content_list.append('wrong')
+                keypres(1)
                     
             new = win32api.GetKeyState(0x63)
-            if new < 0:
-                self.new_words = keypres(1, self.new_words)
-                self.repeat_new += 1
+            if self.name_new == None:
+                pass
+            elif new < 0:
+                self.new_num_session += goal_add_value(1, self.name_new)
                 self.print_minimal_ui = True
                 self.finished_content_list.append('new')
+                keypres(1)
 
             undo = win32api.GetKeyState(0x6E)
             if undo >= 0:
@@ -940,27 +1004,25 @@ class workSession:
             if self.last_finished_content == None:
                 pass
             elif self.last_finished_content == 'one_finish':
-                self.repeat_one_finish -= 1
-                self.pages_finished -= 1
+                self.pages_finished_session -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
 
             elif self.last_finished_content == 'right':
-                self.correct -= 1
-                self.repeat_right -= 1
+                self.correct_num_session -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
+
             elif self.last_finished_content == 'wrong':
-                self.incorrect -= 1
-                self.repeat_wrong -= 1
+                self.incorrect_num_session -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
+                
             elif self.last_finished_content == 'new':
-                self.new_words -= 1
-                self.repeat_new -= 1
+                self.new_num_session -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
@@ -995,7 +1057,7 @@ class workSession:
                     msvcrt.getch()
                 os.system('cls')
                 while True:
-                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.repeat_one_finish, 'right': self.repeat_right, 'wrong': self.repeat_wrong, 'new': self.repeat_new})
+                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.pages_finished_session, 'right': self.correct_num_session, 'wrong': self.incorrect_num_session, 'new': self.new_num_session})
                     if self.progress != 100 and not self.goal == 0:
                         print("タスクがまだ完了していません。\n本当に", end='')
                     print("終了しますか +/-")
@@ -1010,7 +1072,7 @@ class workSession:
                         break
                     elif finish == '+' or finish == "y":
                         self.calculate_time_and_point()
-                        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words': self.new_words, 'correct': self.correct, 'incorrect': self.incorrect, 'pages_finished': self.pages_finished, 'past_goal': self.goal})
+                        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
 
                         os.system('cls')
                         return True
@@ -1019,13 +1081,34 @@ class workSession:
                     os.system('cls')
 
     def wrap_up_session(self):
+
+        self.pages_finished_dict[self.name_task] = self.pages_finished_session
+        self.new_num_dict[self.name_new] = self.new_num_session
+        self.correct_num_dict[self.name_correct] = self.correct_num_session
+        self.incorrect_num_dict[self.name_incorrect] = self.incorrect_num_session
+
+        self.pages_finished_full += self.pages_finished_session
+        self.new_words_full += self.new_num_session
+        self.correct_full += self.correct_num_session
+        self.incorrect_full += self.incorrect_num_session
+
+
+        self.name_task = None
+        self.name_new = None
+        self.name_correct = None
+        self.name_incorrect = None
+
+        if not self.temp_past_goal == None:
+            self.past_goal = self.temp_past_goal
+        self.temp_past_goal = None
+
         if self.is_using_music == True:
             self.music.stop()
-        self.past_incorrect_len = self.incorrect
+        self.past_incorrect_len = self.incorrect_full
         self.actual_study_time = self.the_time #why does this need to do this 
         if not self.add_point == 0:
             self.continuous_time += self.the_time
-            self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'last_study_time': self.study_time})
+            self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'last_study_time': self.study_time, 'past_goal': self.past_goal})
         self.time_list.append(self.the_time/60)
         self.label_list.append(self.label)
         self.time_ended_list.append(return_time())
@@ -1048,7 +1131,6 @@ class workSession:
         self.last_study_time = self.study_time
         self.study_time = None
         self.add_point = None
-        self.past_goal = self.goal
         self.goal = None
         os.system('cls')
 

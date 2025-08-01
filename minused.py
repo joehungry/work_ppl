@@ -4,7 +4,7 @@ import os, datetime, subprocess
 today = datetime.datetime.now()
 
 pointsFile = file.content('REPORT/logs', 'progress.txt', lock=True)
-persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words': 0, 'correct': 0, 'incorrect': 0, 'pages_finished': 0, 'recess_now': 0, 'past_goal': None, 'last_study_time': None, 'label_base': None, 'today': None}
+persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words_full': 0, 'correct_full': 0, 'incorrect_full': 0, 'pages_finished_full': 0, 'recess_now': 0, 'past_goal': None, 'last_study_time': None, 'label_base': None, 'today': None}
 manage_persistent_data = data.manage(persistent_data, pointsFile)
 manage_persistent_data.extract_from_file()
 subprocess.check_call(["attrib","+H", 'REPORT\logs\progress.txt'])

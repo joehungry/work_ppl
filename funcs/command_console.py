@@ -220,7 +220,7 @@ class command_executor:
             goal = True
         else:
             goal = goalLanguage.breakdownGoalInput(command_value)
-            return_dict = {'goal': goal}
+            return_dict = {'goal': goal, 'goal_prompt': command_value}
         if goal == None or goal == []:
             pass
         else:
@@ -298,5 +298,5 @@ class cli:
 
 if __name__ == '__main__':
     cli_test = cli('$')
-    cli_test.get_command('TSK\'1 * h 10 15*s')
+    cli_test.get_command('NW\'ページ数')
     print(cli_test.execute_command())
