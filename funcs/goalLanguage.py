@@ -30,14 +30,14 @@ def breakdownParentheses(oringinalString):
 
 
 def breakdownGoalSingleInput(goalInput):
-    goalCommand = {"new": 'new', 'nw': 'new', "correct": 'right', "c": 'right', "C": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right, wrong'], "sv": ['right', 'wrong'], "SV": ['right', 'wrong'], "task": 'one_finish', "t": 'one_finish', "T": 'one_finish'}
+    goalCommand = {"new": 'new', 'nw': 'new', "correct": 'right', "c": 'right', "C": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right, wrong'], "sv": ['right', 'wrong'], "SV": ['right', 'wrong'], "task": 'one_finish', "tsk": 'one_finish', "tk": 'one_finish'}
 
     tempGoalName = None
     tempGoalQuota = None
     goalNameList = []
     goalQuota = None
     tempGoalNameList = []
-    if ',' in goalInput:
+    if ',' in goalInput:#for separating commands
         tempGoalNameList = splice.toList(goalInput, ',', 'str')
         goalName, tempGoalQuota = splice.splice(tempGoalNameList[len(tempGoalNameList)-1], '=', 'str')
         tempGoalNameList.pop(len(tempGoalNameList)-1) #bc the last element in goalInput is always the has the quota
@@ -54,8 +54,7 @@ def breakdownGoalSingleInput(goalInput):
     for i in tempGoalNameList:
         if not i in goalCommand:
             return None, None
-        else:
-            goalNameList.append(goalCommand[i])
+        goalNameList.append(goalCommand[i])
         if tempGoalQuota == 'd' or tempGoalQuota == 'done':
             goalQuota = 1
         elif num.isNum(tempGoalQuota):
@@ -227,4 +226,4 @@ def breakdownGoalInput(originalString):
 if __name__ == '__main__':
     #print(breakdownGoalInput('(t and c = 2) and y= 5'))
     #print(breakdownGoalInput('t and (c = 2 and x= 5)'))
-    print(breakdownGoalInput('(t and c) = 10'))
+    print(breakdownGoalInput('(tsk and nw) = 10 or nw'))

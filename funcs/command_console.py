@@ -26,7 +26,6 @@ def check_time_value(time_value):
             return_list.append(i)
         #makes element one (1*h is one element)
         elif time_list[ilen+1] == '*':
-            print(f'work bitch: {i}')
             return_list.append(''.join([i, time_list[ilen+1], time_list[ilen+2]]))
             skip = 2
         else:
@@ -63,7 +62,7 @@ def splice_command(splice_sign, command_input, command_dict):
         pass
     elif temp_command_key in command_dict:
         command_key = command_dict[temp_command_key]
-    return command_key, command_value
+    return temp_command_key, command_key, command_value
 
 def turn_on(variable_name, command_value, local_preset, preset_content, temp_value):
     returnDict = {}
@@ -79,7 +78,7 @@ class command_executor:
         self.value_preset_dict = {'s': 'same_content', 'n': 'no_content', 'u':'use_content'}
         self.temp_value = temp_value
 
-    def set_label(self, command_value):#make it print \nL'{label}\n
+    def set_label(self, command_key, command_value):#make it print \nL'{label}\n
         value_preset_content = {'same_content': {'same_label': None}, 'no_content': {}, 'use_content': {'use_label': None}}
         preset_value = None
         return_dict = {}
@@ -93,7 +92,7 @@ class command_executor:
             return_dict['print'] = f'{self.temp_value}'
             return return_dict
 
-    def set_time(self, command_value):
+    def set_time(self, command_key, command_value):
         value_preset_content = {'same_content': {'same_time': None}, 'no_content': {}, 'use_content': {}}
         preset_value = None
         if '\\' in command_value:
@@ -104,11 +103,11 @@ class command_executor:
             return value_preset_content[preset_value]
         elif num.isNum(command_value) == False:
             pass
-        elif not command_value == 0:
-            return {'time': float(command_value), 'print': f'{self.temp_value}分'}
+        elif not float(command_value) == 0:
+            return {'time': float(command_value)}
         return {'error': 'time must be number'}
 
-    def set_time_label(self, command_value):
+    def set_time_label(self, command_key, command_value):
         value_preset_content = {'same_content': {'same_label': None, 'same_time': None}, 'no_content': {}, 'use_content': {}}
         preset_value = None
         return_dict = {}
@@ -124,7 +123,7 @@ class command_executor:
             return return_dict
         return {'error': 'time must be number'}
         
-    def change_file_command_type(self, command_value):
+    def change_file_command_type(self, command_key, command_value):
         return_dict = {}
         diary_type = {'write': 'write', 'w': 'write', 'change': 'change', 'c': 'change', 'save': 'save', 'sv': 'save'} 
         index_moving = {'back': 'go_back_to_original_place', 'r': 'go_back_to_original_place',
@@ -140,39 +139,42 @@ class command_executor:
         if not return_dict == {}:
             return return_dict
     
-    def add_comment(self, command_value):
+    def add_comment(self, command_key, command_value):
         return {'add_comment': command_value}
     
-    def remove_file_index(self, command_value):
+    def remove_file_index(self, command_key, command_value):
         return {'remove_file_index': None}
     
-    def overwrite_diary(self, command_value):
+    def overwrite_diary(self, command_key, command_value):
         today = datetime.datetime.now()
         today_foratted = today.strftime('%Y-%m-%d %H:%M:%S')
         return {'overwrite_diary': command_value, 'diary_written_time': today_foratted}
         
-    def turn_sound_on(self, command_value):#make it print sound is on
+    def turn_sound_on(self, command_key, command_value):#make it print sound is on
         local_preset = {'on': 'sound_on', 'off': 'sound_off'}
         preset_content = {'sound_on': {'sound_on': True}, 'sound_off': {'sound_on': False}}
         return turn_on('sound', command_value, local_preset, preset_content, self.temp_value)
     
-    def turn_email_on(self, command_value):
+    def turn_email_on(self, command_key, command_value):
         local_preset = {'on': 'email_on', 'off': 'email_off'}
         preset_content = {'email_on': {'email_on': True}, 'email_off': {'email_on': False}}
         return turn_on('email', command_value, local_preset, preset_content, self.temp_value)
     
-    def start_session(self, command_value):
+    def start_session(self, command_key, command_value):
         return {'start_session': None}
     
-    def add_to_past_label(self, command_value):
+    def add_to_past_label(self, command_key, command_value):
         return {'string_to_add_label': command_value, 'print': f'{self.temp_value}'}
     
-    def set_points(self, command_value):
+    def set_label_base(self, command_key, command_value):
+        return {'label_base': command_value, 'print': f'{self.temp_value}'}
+    
+    def set_points(self, command_key, command_value):
         local_preset = {None: 'points_on', 'on': 'points_on', 'off': 'points_off', 'no': 'points_off'}
         preset_content = {'points_on': {'points': 1}, 'points_off': {'points': 0}}
         return turn_on('point system', command_value, local_preset, preset_content, self.temp_value)
     
-    def show_value(self, command_value):
+    def show_value(self, command_key, command_value):
         local_preset = {'study time': 'study_time', 'time': 'study_time',
                          'study list': 'study_list', 'list': 'study_list',
                          'point': 'points', 'points': 'points',
@@ -181,12 +183,12 @@ class command_executor:
         if command_value in local_preset:
             return {f'show_{local_preset[command_value]}': None}
     
-    def end_something(self, command_value):
+    def end_something(self, command_key, command_value):
         local_preset = {'study': 'study'}
         if command_value in local_preset:
             return {f'end_{local_preset[command_value]}': None}
         
-    def change_sound_volume(self, command_value):
+    def change_sound_volume(self, command_key, command_value):
         if num.isNum(command_value) == False:
             return {'error': 'volume must be a number'}
         volume = float(command_value)
@@ -194,19 +196,19 @@ class command_executor:
             return {'volume': int(command_value), 'print': f'volume = {self.temp_value}'}
         return {'error': 'volume must be within 0 and 100'}
     
-    def change_settings(self, command_value):
+    def change_settings(self, command_key, command_value):
         local_preset_sound = {'sound rest': 'choose_music_rest', 'sound study': 'choose_music_study'}
         if command_value in local_preset_sound:
             return {f'change_sound': local_preset_sound[command_value]}
         
-    def use_content(self, command_value):
+    def use_content(self, command_key, command_value):
         local_preset = {'unused rest': 'rest', 'rest': 'rest', 'reccomended label': 'label', 'label': 'label'}
         comment_preset = {'rest': 'this would not print because rest returns be4 this comes', 
                           'label': f'{self.temp_value}'}
         if command_value in local_preset:
             return {f'use_{local_preset[command_value]}': None, 'print': comment_preset[local_preset[command_value]]}
 
-    def set_goal(self, command_value):
+    def set_goal(self, command_key, command_value):
         return_dict = {}
         goal = None
         local_preset = {'\\n': 'no_goal', 'none': 'no_goal', 'n': 'no_goal',
@@ -223,18 +225,22 @@ class command_executor:
             return_dict['print'] = f'{self.temp_value}'
             return return_dict
         
-    def set_filetype(self, command_value):
+    def set_filetype(self, command_key, command_value):
         local_preset = {'goal': 'goal', 'g': 'goal', 'd': 'diary', 'diary': 'diary', 'none': 'none', 'free': 'none', 'n': 'none'}
         if command_value in local_preset:
             return {'filetype': local_preset[command_value]}
         
-    def choose_file(self, command_value):
+    def choose_file(self, command_key, command_value):
         if '.' in command_value:
             return {'filename': command_value}
     
-    def choose_dir(self, command_value):
+    def choose_dir(self, command_key, command_value):
         return {'filedir': command_value}
-
+    
+    def change_goal_name(self, command_key, command_value):
+        local_preset = {'C': 'name_correct', 'X': 'name_incorrect', 'TK': 'name_task', 'TSK': 'name_task', 'NW': 'name_new'}
+        return {local_preset[command_key]: command_value, 'print': f'{local_preset[command_key][5:]} is {self.temp_value}'}
+        #local_preset[command_key][5:] is removing 'name_' from local_preset[command_key]
 
 
 class cli:
@@ -242,7 +248,9 @@ class cli:
         self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'overwrite_diary', 'F': 'change_file_command_type', 
                                          'F+': 'add_comment', 'F-': 'remove_file_index',
                                          'S': 'turn_sound_on', 'TL': 'set_time_label', 'LT': 'set_time_label', 
-                                         'p': 'set_points', 'P': 'set_points'}
+                                         'p': 'set_points', 'P': 'set_points', 'Lb': 'set_label_base', 
+                                         'C': 'change_goal_name', 'X': 'change_goal_name', 'TK': 'change_goal_name',  'TSK': 'change_goal_name', 
+                                         'NW': 'change_goal_name'}
         self.no_split_command_dict = {'p': 'set_points', 'P': 'set_points', 'start': 'start_session', '': 'start_session', 
                                          'F-': 'remove_file_index'}
         self.space_split_command_dict = {'sound': 'turn_sound_on', 'email': 'turn_email_on', 'mail': 'turn_email_on',
@@ -257,21 +265,22 @@ class cli:
                                      'end_something': execute.end_something, 'change_sound_volume': execute.change_sound_volume,
                                      'change_settings': execute.change_settings, 'use_content': execute.use_content, 'set_goal': execute.set_goal,
                                      'add_comment': execute.add_comment, 'remove_file_index': execute.remove_file_index, 'overwrite_diary': execute.overwrite_diary,
-                                     'choose_file': execute.choose_file, 'choose_dir': execute.choose_dir, 'set_filetype': execute.set_filetype}
+                                     'choose_file': execute.choose_file, 'choose_dir': execute.choose_dir, 'set_filetype': execute.set_filetype, 
+                                     'set_label_base': execute.set_label_base, 'change_goal_name': execute.change_goal_name}
         self.command_key = None
         self.command_value = None
 
 
     def get_command(self, command_input):
-        temp_command_key, temp_command_value = splice_command('\'', command_input, self.colon_split_command_dict)
+        self.original_command, temp_command_key, temp_command_value = splice_command('\'', command_input, self.colon_split_command_dict)
         if not temp_command_key == None:
             self.command_key = temp_command_key
             self.command_value = temp_command_value
-        temp_command_key, temp_command_value = splice_command(' ', command_input, self.space_split_command_dict)
+        self.original_command, temp_command_key, temp_command_value = splice_command(' ', command_input, self.space_split_command_dict)
         if not temp_command_key == None:
             self.command_key = temp_command_key
             self.command_value = temp_command_value
-        temp_command_key, temp_command_value = splice_command('', command_input, self.no_split_command_dict)
+        self.original_command, temp_command_key, temp_command_value = splice_command('', command_input, self.no_split_command_dict)
         if not temp_command_key == None:
             self.command_key = temp_command_key
         
@@ -279,7 +288,7 @@ class cli:
         #print(self.command_key, self.command_value)
         #input()
         if not self.command_key == None:
-            return self.command_content_dict[self.command_key](self.command_value)
+            return self.command_content_dict[self.command_key](self.original_command, self.command_value)
 
 
 if __name__ == '__main__':
