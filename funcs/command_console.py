@@ -53,6 +53,7 @@ def splice_command(splice_sign, command_input, command_dict):
     temp_command_key = None
     command_key = None
     command_value = None
+    original_command_key = None
     if splice_sign == '':
         temp_command_key = command_input
 
@@ -61,8 +62,9 @@ def splice_command(splice_sign, command_input, command_dict):
     if temp_command_key == None:
         pass
     elif temp_command_key in command_dict:
+        original_command_key = temp_command_key
         command_key = command_dict[temp_command_key]
-    return temp_command_key, command_key, command_value
+    return original_command_key, command_key, command_value
 
 def turn_on(variable_name, command_value, local_preset, preset_content, temp_value):
     returnDict = {}
@@ -272,26 +274,29 @@ class cli:
 
 
     def get_command(self, command_input):
-        self.original_command, temp_command_key, temp_command_value = splice_command('\'', command_input, self.colon_split_command_dict)
+        temp_original_key, temp_command_key, temp_command_value = splice_command('\'', command_input, self.colon_split_command_dict)
         if not temp_command_key == None:
             self.command_key = temp_command_key
             self.command_value = temp_command_value
-        self.original_command, temp_command_key, temp_command_value = splice_command(' ', command_input, self.space_split_command_dict)
+            self.original_key = temp_original_key
+        temp_original_key, temp_command_key, temp_command_value = splice_command(' ', command_input, self.space_split_command_dict)
         if not temp_command_key == None:
             self.command_key = temp_command_key
             self.command_value = temp_command_value
-        self.original_command, temp_command_key, temp_command_value = splice_command('', command_input, self.no_split_command_dict)
+            self.original_key = temp_original_key
+        temp_original_key, temp_command_key, temp_command_value = splice_command('', command_input, self.no_split_command_dict)
         if not temp_command_key == None:
             self.command_key = temp_command_key
+            self.original_key = temp_original_key
         
     def execute_command(self):
         #print(self.command_key, self.command_value)
         #input()
         if not self.command_key == None:
-            return self.command_content_dict[self.command_key](self.original_command, self.command_value)
+            return self.command_content_dict[self.command_key](self.original_key, self.command_value)
 
 
 if __name__ == '__main__':
     cli_test = cli('$')
-    cli_test.get_command('T\'1 * h 10 15*s')
+    cli_test.get_command('TSK\'1 * h 10 15*s')
     print(cli_test.execute_command())
