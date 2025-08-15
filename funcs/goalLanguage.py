@@ -155,6 +155,8 @@ def breakdownAndOr(tokens):
             goalName, goalQuota = breakdownGoalSingleInput(" ".join(group))
             if goalName == None:
                 return None
+            if goalQuota == None:
+                return None
             if goalName:
                 parsed_groups.append({'goalName': goalName, 'goalQuota': goalQuota})
     return parsed_groups
@@ -182,11 +184,18 @@ def breakdownGoalInput(originalString):
             current_or_group = []
             for item in finished_group:
                 if item == 'or':
-                    or_groups.append(breakdownAndOr(current_or_group))
+                    temp_group = breakdownAndOr(current_or_group)
+                    if temp_group == None:
+                        return None
+                    or_groups.append(temp_group)
                     current_or_group = []
                 else:
                     current_or_group.append(item)
-            or_groups.append(breakdownAndOr(current_or_group))
+
+            temp_group = breakdownAndOr(current_or_group)
+            if temp_group == None:
+                return None
+            or_groups.append(temp_group)
             # Simplify if it's not a real 'or' group
             if len(or_groups) == 1:
                 stack[-1].append(or_groups[0])
@@ -226,4 +235,4 @@ def breakdownGoalInput(originalString):
 if __name__ == '__main__':
     #print(breakdownGoalInput('(t and c = 2) and y= 5'))
     #print(breakdownGoalInput('t and (c = 2 and x= 5)'))
-    print(breakdownGoalInput('(tsk and nw) = 10 or nw'))
+    print(breakdownGoalInput('t = 1 and c = 10'))

@@ -125,11 +125,10 @@ class content:
         with open(self.file, 'r', encoding=self.encoder) as o:
             file_lines = (o.readlines())
         if no_strip == True:
-            iList = file_lines
-        else:
-            for i in file_lines:
-                iStrip = i.strip()
-                iList.append(iStrip)
+            return file_lines
+        for i in file_lines:
+            iStrip = i.strip()
+            iList.append(iStrip)
         self.fileContent = file_lines
         return iList
 

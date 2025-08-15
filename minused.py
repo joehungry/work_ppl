@@ -12,8 +12,8 @@ extracted_value = manage_persistent_data.extract_from_file()
 originalPointNumber = float(extracted_value['current_points'])
 
 
-whatToDo = {'can impliment new feature': 'CODING', 'don\'t have to do anything toddy': 'NOTHING_DAY', 'videoes': 'videoes'}
-pointsDict = {'CODING': 100,  'NOTHING_DAY': 500, 'videoes': 1.5}
+whatToDo = {'can impliment new feature': 'CODING', 'don\'t have to do anything toddy': 'NOTHING_DAY', 'videoes': 'videoes', "reset": "reset"}
+pointsDict = {'CODING': 100,  'NOTHING_DAY': 500, 'videoes': 1.5, "reset": originalPointNumber}
 
 def subtractPonts(totalPoints, pointsToSubtract):
     if totalPoints >= pointsToSubtract:
@@ -51,7 +51,7 @@ while True:
         chooseSetting = None
     else:
         usedPoints = pointsDict[chooseSetting]
-        if not chooseSetting == 'FUCK_YOU' or chooseSetting == 'BADBAD':
+        if not chooseSetting == 'reset':
             nameOfContent = prints.ask('WHAT ARE YOU GOING TO USE IT FOR?')
             timeOfContent = False
             while True:
@@ -90,6 +90,7 @@ while True:
 
         manage_persistent_data.change_value({'current_points': str(pointNumber)})
         manage_persistent_data.write_to_file()
+        originalPointNumber = pointNumber
     
 
         month = str(today.month)

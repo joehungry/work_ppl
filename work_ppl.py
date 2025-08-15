@@ -65,27 +65,18 @@ def print_string_true_false(temp_value, string, temp_replacement):
 
 
 def ReturnRest(rest_var, recess):
-    try:
-        if "givup'" in rest_var:
-            return (recess - float(rest_var[(rest_var.find("'"))+1:]))
-    except:
+    if rest_var == 'all':
+        return recess
+    if rest_var == 'none':
+        return 0
+    if rest_var == 'auto':
+        var = workSession.AutoRest(recess)
+        return var
+    if num.isNum(rest_var) == False:
         pass
-    try:
-        rest_var = float(rest_var)
-        if not rest_var > recess:
-            return rest_var
-    except:
-        if rest_var == 'all':
-            return recess
-        elif 'none':
-            return 0
-        if rest_var == "auto":
-            var = workSession.AutoRest(recess)
-            return var
-        elif not rest_var == None:
-            return rest_var
-
-
+    elif rest_var <= recess:
+        return rest_var
+    return None
 
 def extract_if_True(extract_value, boolian):
     if boolian == True:
@@ -200,13 +191,13 @@ class workSession:
             what_to_write += f'\n{time_code_start} - {time_code_end}'
             what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(self.time_list[session_nunber])}分'
             if name_task != None:
-                what_to_write += f"{name_task}: {self.pages_finished_dict[name_task]}個"
+                what_to_write += f"\n{name_task}: {self.pages_finished_dict[name_task]}"
             if name_new != None:
-                what_to_write += f"{name_new}: {self.new_num_dict[name_new]}個"
+                what_to_write += f"\n{name_new}: {self.new_num_dict[name_new]}"
             if name_correct != None:
-                what_to_write += f"{name_correct}: {self.correct_num_dict[name_correct]}個"
+                what_to_write += f"\n{name_correct}: {self.correct_num_dict[name_correct]}"
             if name_incorrect != None:
-                what_to_write += f"{name_incorrect}: {self.incorrect_num_dict[name_incorrect]}個"
+                what_to_write += f"\n{name_incorrect}: {self.incorrect_num_dict[name_incorrect]}"
             if self.add_point == 0:
                 what_to_write += ' *no point*'
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'

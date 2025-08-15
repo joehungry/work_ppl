@@ -183,6 +183,7 @@ class main_rest_class:
                         sleep(0.1)
                         break
                     else:
+                        os.system('cls')
                         prints.err('input error')
             if minimal_screen == 0:
                 os.system('cls')
