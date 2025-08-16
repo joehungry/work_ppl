@@ -240,9 +240,19 @@ class command_executor:
         return {'filedir': command_value}
     
     def change_goal_name(self, command_key, command_value):
-        local_preset = {'C': 'name_correct', 'X': 'name_incorrect', 'TK': 'name_task', 'TSK': 'name_task', 'NW': 'name_new'}
-        return {local_preset[command_key]: command_value, 'print': f'{local_preset[command_key][5:]} is {self.temp_value}'}
+        return_value_dict = {}
+        local_preset = {'C': 'correct', 'X': 'incorrect', 'TK': 'task', 'TSK': 'task', 'NW': 'new'}
+        value_preset_content = {'same_content': {'same_content': "same_"}, 'no_content': {}, 'use_content': {}}
+        goal_to_change = ""
+        if '\\' in command_value:#command_value[1:] is bc of L'\s "\" part. i dont need this part
+            preset_value_dict = check_value_preset(command_value[1:], self.value_preset_dict)
+            goal_to_change = preset_value_dict["same_content"] #so that it adds same_ when making the same thing i know its conveluted
+            command_value = None
+        goal_to_change += local_preset[command_key]
+        return {"name_goal": f'{goal_to_change}:{command_value}', "print": f'{local_preset[command_key][5:]} is {self.temp_value}'}
         #local_preset[command_key][5:] is removing 'name_' from local_preset[command_key]
+
+        return return_value_dict
 
 
 class cli:

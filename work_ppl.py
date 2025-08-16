@@ -83,6 +83,14 @@ def extract_if_True(extract_value, boolian):
         return extract_value
     return 0
 
+def check_same_command(past_value, print_var, error_msg, error_var):
+    if not past_value == None:
+        print_var.append(past_value)
+        return past_value, False
+    prints.err(error_msg)
+    return None, True
+
+
 class workSession:
     def __init__(self):
         self.first_recess = 10
@@ -118,10 +126,7 @@ class workSession:
         self.filetype = None
         self.user_made_file_content = None
 
-        self.name_task = None
-        self.name_new = None
-        self.name_correct = None
-        self.name_incorrect = None
+        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrct": None}
 
         self.pages_finished_dict = {}
         self.new_num_dict = {}
@@ -389,48 +394,48 @@ class workSession:
                     print(percentageStr)
                     print('~~~~~~~')
                     print()
-                if self.name_task != None:
+                if self.goal_name_dict["task"] != None:
                     print()
-                    print('\033[32m' + self.name_task + END + 'は"4/←"', end='')
+                    print('\033[32m' + self.goal_name_dict["task"] + END + 'は"4/←"', end='')
                     print(f' ({progressDict['one_finish']['current']}', end='')
                 if self.goal == 0:
                     pass
-                elif self.name_task != None:
+                elif self.goal_name_dict["task"] != None:
                     print(f'/{progressDict['one_finish']['required']}', end='')
-                if self.name_task != None:
+                if self.goal_name_dict["task"] != None:
                     print(')')
 
-                if self.name_correct != None:
+                if self.goal_name_dict["correct"] != None:
                     print()
-                    print('\033[32m' + self.name_correct + END + 'は"1/END"', end='')
+                    print('\033[32m' + self.goal_name_dict["correct"] + END + 'は"1/END"', end='')
                     print(f' ({progressDict['right']['current']}', end='')
                 if self.goal == 0:
                     pass
-                elif self.name_correct != None:
+                elif self.goal_name_dict["correct"] != None:
                     print(f'/{progressDict['right']['required']}', end='')
-                if self.name_correct != None:
+                if self.goal_name_dict["correct"] != None:
                     print(')')
 
-                if self.name_incorrect != None:
+                if self.goal_name_dict["incorrect"] != None:
                     print()
-                    print('\033[32m' + self.name_incorrect + END +'は"2/↓"', end='')
+                    print('\033[32m' + self.goal_name_dict["incorrect"] + END +'は"2/↓"', end='')
                     print(f' ({progressDict['wrong']['current']}', end='')
                 if self.goal == 0:
                     pass
-                elif self.name_incorrect != None:
+                elif self.goal_name_dict["incorrect"] != None:
                     print(f'/{progressDict['wrong']['required']}', end='')
-                if self.name_incorrect != None:
+                if self.goal_name_dict["incorrect"] != None:
                     print(')')
 
-                if self.name_new != None:
+                if self.goal_name_dict["new"] != None:
                     print()
-                    print('\033[32m' + self.name_new + END + 'は"3/pgDn"', end='')
+                    print('\033[32m' + self.goal_name_dict["new"] + END + 'は"3/pgDn"', end='')
                     print(f' ({progressDict['new']['current']}', end='')
                 if self.goal == 0:
                     pass
-                elif self.name_new != None:
+                elif self.goal_name_dict["new"] != None:
                     print(f'/{progressDict['new']['required']}', end='')
-                if self.name_new != None:
+                if self.goal_name_dict["new"] != None:
                     print(')')
 
                 print()
@@ -454,35 +459,35 @@ class workSession:
                     if not self.goal == 0:
                         prints.progress(int(progress))
                     print()
-                    if self.name_task != None:
+                    if self.goal_name_dict["task"] != None:
                         print()
-                        print(f'{self.name_task}：{self.pages_finished_session}', end='')
+                        print(f'{self.goal_name_dict["task"]}：{self.pages_finished_session}', end='')
                     if self.goal == 0:
                         pass
-                    elif self.name_task != None:
+                    elif self.goal_name_dict["task"] != None:
                         print(f'/{progressDict['one_finish']['required']}', end='')
 
-                    if self.name_correct != None:
+                    if self.goal_name_dict["correct"] != None:
                         print()
-                        print(f'{self.name_correct}：{self.correct_num_session}', end='')
+                        print(f'{self.goal_name_dict["correct"]}：{self.correct_num_session}', end='')
                     if self.goal == 0:
                         pass
                         print(f'/{progressDict['right']['required']}', end='')
 
-                    if self.name_incorrect != None:
+                    if self.goal_name_dict["incorrect"] != None:
                         print()
-                        print(f'誤答：{self.incorrect_num_session}', end='')
+                        print(f'{self.goal_name_dict["incorrect"]}：{self.incorrect_num_session}', end='')
                     if self.goal == 0:
                         pass
-                    elif self.name_incorrect != None:
+                    elif self.goal_name_dict["incorrect"] != None:
                         print(f'/{progressDict['wrong']['required']}', end='')
                     
-                    if self.name_new != None:
+                    if self.goal_name_dict["new"] != None:
                         print()
-                        print(f'新規：{self.new_num_session}', end='')
+                        print(f'{self.goal_name_dict["new"]}：{self.new_num_session}', end='')
                     if self.goal == 0:
                         pass
-                    elif self.name_new != None:
+                    elif self.goal_name_dict["new"] != None:
                         print(f'/{progressDict['new']['required']}', end='')
                     print("\033[8m")
                     self.print_minimal_ui = False
@@ -573,12 +578,7 @@ class workSession:
                         prints.err('base label does not exist')
                         error = True
                 case 'same_label':
-                    if not self.past_label == None:
-                        self.label = self.past_label
-                        print_var.append(self.label)
-                    else:
-                        error = True
-                        prints.err('past label does not exist')
+                    self.label, error = check_same_command(self.past_label, print_var, 'past label does not exist')
                 case 'use_label':
                     if not self.recommended_label == None:
                         self.label = self.recommended_label
@@ -590,6 +590,7 @@ class workSession:
                     self.study_time = cli_output[command]
                     print_var.append(self.study_time)
                 case 'same_time':
+                    self.study_time, error = check_same_command(self.last_study_time, print_var, 'past session does not exist')
                     if not self.last_study_time == None:
                         self.study_time = self.last_study_time
                         print_var.append(self.study_time)
@@ -714,16 +715,16 @@ class workSession:
                     
                     if ready_to_start == False:
                         pass
-                    elif 'one_finish' in goals and self.name_task == None:
+                    elif 'one_finish' in goals and self.goal_name_dict["task"] == None:
                         prints.err('choose name for task')
                         ready_to_start = False
-                    elif 'new' in goals and self.name_new == None:
+                    elif 'new' in goals and self.goal_name_dict["new"] == None:
                         ready_to_start = False
                         prints.err('choose name for new')
-                    elif 'right' in goals and self.name_correct == None:
+                    elif 'right' in goals and self.goal_name_dict["correct"] == None:
                         ready_to_start = False
                         prints.err('choose name for correct_full')
-                    elif 'wrong' in goals and self.name_incorrect == None:
+                    elif 'wrong' in goals and self.goal_name_dict["incorrect"] == None:
                         ready_to_start = False
                         prints.err('choose name for incorrect_full')
                     elif ready_to_start == True:
@@ -775,26 +776,16 @@ class workSession:
                     self.goal = 0
                     print_var.append('goal is None')
                 case 'goal_same_goal':
-                    if self.past_goal:
-                       self.goal = self.past_goal
-                       print_var.append(str(self.goal))
-                    else:
-                        prints.err('past goal does not exist')
+                    self.past_goal, error = check_same_command(self.past_goal, print_var, 'past goal does not exist')
                 case 'goal_prompt':
                     self.temp_past_goal = cli_output[command]
-                        
-                case 'name_correct':
-                    self.name_correct = cli_output[command]
-                    print_var.append(cli_output[command])
-                case 'name_incorrect':
-                    self.name_incorrect = cli_output[command]
-                    print_var.append(cli_output[command])
-                case 'name_task':
-                    self.name_task = cli_output[command]
-                    print_var.append(cli_output[command])
-                case 'name_new':
-                    self.name_new = cli_output[command]
-                    print_var.append(cli_output[command])
+                case "name_goal":
+                    goal_to_change, goal_name = splice.splice(cli_output[command], ":", "str")
+                    if "same_" in goal_to_change:
+                        goal_to_change = goal_to_change[5:] #removes same_ from the var
+                        self.goal_name_dict[goal_to_change], error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
+                    else:
+                        self.goal_name_dict[goal_to_change] = goal_name
 
                 case 'print':
                     if error == False:
@@ -1083,11 +1074,8 @@ class workSession:
         self.correct_full += self.correct_num_session
         self.incorrect_full += self.incorrect_num_session
 
-
-        self.name_task = None
-        self.name_new = None
-        self.name_correct = None
-        self.name_incorrect = None
+        self.past_goal_name_dict = self.goal_name_dict
+        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrct": None}
 
         if not self.temp_past_goal == None:
             self.past_goal = self.temp_past_goal
