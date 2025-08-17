@@ -83,12 +83,12 @@ def extract_if_True(extract_value, boolian):
         return extract_value
     return 0
 
-def check_same_command(past_value, print_var, error_msg, error_var):
+def check_same_command(past_value, print_var, error_msg):
     if not past_value == None:
         print_var.append(past_value)
-        return past_value, False
+        return past_value, print_var, False
     prints.err(error_msg)
-    return None, True
+    return None, print_var, True
 
 
 class workSession:
@@ -126,13 +126,10 @@ class workSession:
         self.filetype = None
         self.user_made_file_content = None
 
-        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrct": None}
+        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
 
-        self.pages_finished_dict = {}
-        self.new_num_dict = {}
-        self.correct_num_dict = {}
-        self.incorrect_num_dict = {}
 
+        self.finished_goals = {}
         self.pages_finished_session = 0
         self.new_num_session = 0
         self.correct_num_session = 0
@@ -190,19 +187,12 @@ class workSession:
         session_nunber = len(self.time_list) - len(self.time_started_list)-1
 
 
-        for time_code_start, time_code_end, name_task, name_new, name_correct, name_incorrect in zip(self.time_started_list, self.time_ended_list, self.pages_finished_dict, self.new_num_dict, self.correct_num_dict, self.incorrect_num_dict):
+        for time_code_start, time_code_end, goal_dict_num in zip(self.time_started_list, self.time_ended_list, self.finished_goals):
             session_nunber +=1
-
+            goal_dict = self.finished_goals[goal_dict_num]
             what_to_write += f'\n{time_code_start} - {time_code_end}'
             what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(self.time_list[session_nunber])}分'
-            if name_task != None:
-                what_to_write += f"\n{name_task}: {self.pages_finished_dict[name_task]}"
-            if name_new != None:
-                what_to_write += f"\n{name_new}: {self.new_num_dict[name_new]}"
-            if name_correct != None:
-                what_to_write += f"\n{name_correct}: {self.correct_num_dict[name_correct]}"
-            if name_incorrect != None:
-                what_to_write += f"\n{name_incorrect}: {self.incorrect_num_dict[name_incorrect]}"
+            what_to_write += "".join([f'\n{ikey}: {ivalue}' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
             if self.add_point == 0:
                 what_to_write += ' *no point*'
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
@@ -459,8 +449,8 @@ class workSession:
                     if not self.goal == 0:
                         prints.progress(int(progress))
                     print()
+                    print()
                     if self.goal_name_dict["task"] != None:
-                        print()
                         print(f'{self.goal_name_dict["task"]}：{self.pages_finished_session}', end='')
                     if self.goal == 0:
                         pass
@@ -468,14 +458,12 @@ class workSession:
                         print(f'/{progressDict['one_finish']['required']}', end='')
 
                     if self.goal_name_dict["correct"] != None:
-                        print()
                         print(f'{self.goal_name_dict["correct"]}：{self.correct_num_session}', end='')
                     if self.goal == 0:
                         pass
                         print(f'/{progressDict['right']['required']}', end='')
 
                     if self.goal_name_dict["incorrect"] != None:
-                        print()
                         print(f'{self.goal_name_dict["incorrect"]}：{self.incorrect_num_session}', end='')
                     if self.goal == 0:
                         pass
@@ -483,7 +471,6 @@ class workSession:
                         print(f'/{progressDict['wrong']['required']}', end='')
                     
                     if self.goal_name_dict["new"] != None:
-                        print()
                         print(f'{self.goal_name_dict["new"]}：{self.new_num_session}', end='')
                     if self.goal == 0:
                         pass
@@ -578,7 +565,7 @@ class workSession:
                         prints.err('base label does not exist')
                         error = True
                 case 'same_label':
-                    self.label, error = check_same_command(self.past_label, print_var, 'past label does not exist')
+                    self.label, print_var, error = check_same_command(self.past_label, print_var, 'past label does not exist')
                 case 'use_label':
                     if not self.recommended_label == None:
                         self.label = self.recommended_label
@@ -590,7 +577,7 @@ class workSession:
                     self.study_time = cli_output[command]
                     print_var.append(self.study_time)
                 case 'same_time':
-                    self.study_time, error = check_same_command(self.last_study_time, print_var, 'past session does not exist')
+                    self.study_time, print_var, error = check_same_command(self.last_study_time, print_var, 'past session does not exist')
                     if not self.last_study_time == None:
                         self.study_time = self.last_study_time
                         print_var.append(self.study_time)
@@ -776,16 +763,17 @@ class workSession:
                     self.goal = 0
                     print_var.append('goal is None')
                 case 'goal_same_goal':
-                    self.past_goal, error = check_same_command(self.past_goal, print_var, 'past goal does not exist')
+                    self.past_goal, print_var, error = check_same_command(self.past_goal, print_var, 'past goal does not exist')
                 case 'goal_prompt':
                     self.temp_past_goal = cli_output[command]
                 case "name_goal":
                     goal_to_change, goal_name = splice.splice(cli_output[command], ":", "str")
                     if "same_" in goal_to_change:
                         goal_to_change = goal_to_change[5:] #removes same_ from the var
-                        self.goal_name_dict[goal_to_change], error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
+                        self.goal_name_dict[goal_to_change], print_var, error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
                     else:
                         self.goal_name_dict[goal_to_change] = goal_name
+                        print_var.append(goal_name)
 
                 case 'print':
                     if error == False:
@@ -941,37 +929,37 @@ class workSession:
                 self.ui_screen('session_ui')
                 
             one_finish = win32api.GetKeyState(0x64)
-            if self.name_task == None:
+            if self.goal_name_dict["task"] == None:
                 pass
             elif one_finish < 0:
-                self.pages_finished_session += goal_add_value(1, self.name_task)
+                self.pages_finished_session += goal_add_value(1, self.goal_name_dict["task"])
                 self.print_minimal_ui = True
                 self.finished_content_list.append('one_finish')
                 keypres(1)
 
             right = win32api.GetKeyState(0x61)
-            if self.name_correct == None:
+            if self.goal_name_dict["correct"] == None:
                 pass
             elif right < 0:                            
-                self.correct_num_session += goal_add_value(1, self.name_correct)
+                self.correct_num_session += goal_add_value(1, self.goal_name_dict["correct"])
                 self.print_minimal_ui = True
                 self.finished_content_list.append('right')
                 keypres(1)
 
             wrong = win32api.GetKeyState(0x62)
-            if self.name_incorrect == None:
+            if self.goal_name_dict["incorrect"] == None:
                 pass
             elif wrong < 0:
-                self.incorrect_num_session += goal_add_value(1, self.name_incorrect)
+                self.incorrect_num_session += goal_add_value(1, self.goal_name_dict["incorrect"])
                 self.print_minimal_ui = True
                 self.finished_content_list.append('wrong')
                 keypres(1)
                     
             new = win32api.GetKeyState(0x63)
-            if self.name_new == None:
+            if self.goal_name_dict["new"] == None:
                 pass
             elif new < 0:
-                self.new_num_session += goal_add_value(1, self.name_new)
+                self.new_num_session += goal_add_value(1, self.goal_name_dict["new"])
                 self.print_minimal_ui = True
                 self.finished_content_list.append('new')
                 keypres(1)
@@ -1063,11 +1051,11 @@ class workSession:
                     os.system('cls')
 
     def wrap_up_session(self):
-
-        self.pages_finished_dict[self.name_task] = self.pages_finished_session
-        self.new_num_dict[self.name_new] = self.new_num_session
-        self.correct_num_dict[self.name_correct] = self.correct_num_session
-        self.incorrect_num_dict[self.name_incorrect] = self.incorrect_num_session
+        int(time.time())
+        self.finished_goals = {int(time.time()): {self.goal_name_dict["task"]: self.pages_finished_session, 
+                                             self.goal_name_dict["new"]: self.new_num_session, 
+                                             self.goal_name_dict["correct"]: self.correct_num_session,
+                                             self.goal_name_dict["incorrect"]: self.incorrect_num_session}}
 
         self.pages_finished_full += self.pages_finished_session
         self.new_words_full += self.new_num_session
@@ -1075,7 +1063,7 @@ class workSession:
         self.incorrect_full += self.incorrect_num_session
 
         self.past_goal_name_dict = self.goal_name_dict
-        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrct": None}
+        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
 
         if not self.temp_past_goal == None:
             self.past_goal = self.temp_past_goal

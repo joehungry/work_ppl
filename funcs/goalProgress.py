@@ -271,6 +271,11 @@ if __name__ == '__main__':
     print()
     print('my_test')
 
-    session_data = {'one_finish': 2, 'right': 0, 'wrong': 0, 'new': 0}
-    goal_test = [{'goalName': ['one_finish'], 'goalQuota': 2}, {'goalName': ['new'], 'goalQuota': 2}]
+    session_data = {'one_finish': 1, 'right': 0, 'wrong': 0, 'new': 2}
+    goal_test = [{'goalName': ['one_finish', 'new'], 'goalQuota': 5}]
+    print(get_goal_progress(goal_test, session_data))
+
+    
+    session_data = {'one_finish': 0, 'right': 1, 'wrong': 2, 'new': 0}
+    goal_test = [{'goalName': [['right', 'wrong']], 'goalQuota': 10}]
     print(get_goal_progress(goal_test, session_data))

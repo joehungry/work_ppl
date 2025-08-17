@@ -249,11 +249,7 @@ class command_executor:
             goal_to_change = preset_value_dict["same_content"] #so that it adds same_ when making the same thing i know its conveluted
             command_value = None
         goal_to_change += local_preset[command_key]
-        return {"name_goal": f'{goal_to_change}:{command_value}', "print": f'{local_preset[command_key][5:]} is {self.temp_value}'}
-        #local_preset[command_key][5:] is removing 'name_' from local_preset[command_key]
-
-        return return_value_dict
-
+        return {"name_goal": f'{goal_to_change}:{command_value}', "print": f'{local_preset[command_key]} is {self.temp_value}'}
 
 class cli:
     def __init__(self, temp_value):
