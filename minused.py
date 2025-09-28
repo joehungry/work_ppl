@@ -71,9 +71,9 @@ while True:
         tempPointNumber = subtractPonts(originalPointNumber, pointsTimesTime)
     if not tempPointNumber == None:
         os.system('cls')
-        print(f'YOU ARE ABOUT TO USE {pointsTimesTime} POINTS FOR {nameOfContent}')
-        finalCheck = prints.ask('ARE YOU SURE? (y/n) or write "bug!" if there was a bug')
         while True:
+            print(f'YOU ARE ABOUT TO USE {pointsTimesTime} POINTS FOR {nameOfContent}')
+            finalCheck = prints.ask('ARE YOU SURE? (y/n) or write "bug!" if there was a bug')
             os.system('cls')
             if finalCheck.lower() == 'y':
                 pointNumber = tempPointNumber
@@ -86,7 +86,8 @@ while True:
                 pointsTimesTime = f'{pointsTimesTime} <= bug devided'
                 break
             else:
-                pass
+                os.system('cls')
+                prints.err('error in input')
 
         manage_persistent_data.change_value({'current_points': str(pointNumber)})
         manage_persistent_data.write_to_file()

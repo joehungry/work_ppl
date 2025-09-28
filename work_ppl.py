@@ -127,13 +127,10 @@ class workSession:
         self.user_made_file_content = None
 
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
+        self.goal_value_dict = {"task": 0, "new": 0, "correct": 0, "incorrect": 0}
 
 
         self.finished_goals = {}
-        self.pages_finished_session = 0
-        self.new_num_session = 0
-        self.correct_num_session = 0
-        self.incorrect_num_session = 0
 
 
 
@@ -365,7 +362,7 @@ class workSession:
         self.manage_persistent_data.change_value({'current_points': self.past_points})
     
     def ui_screen(self, ui_type):
-        goal_dict = {'one_finish': self.pages_finished_session, 'right': self.correct_num_session, 'wrong': self.incorrect_num_session, 'new': self.new_num_session} #this is here because it doesn't work if i directly put it in the variable wtf why
+        goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
         match ui_type:
             case 'session_ui':#main_ui
                 print(END)
@@ -384,50 +381,15 @@ class workSession:
                     print(percentageStr)
                     print('~~~~~~~')
                     print()
-                if self.goal_name_dict["task"] != None:
                     print()
-                    print('\033[32m' + self.goal_name_dict["task"] + END + 'は"4/←"', end='')
-                    print(f' ({progressDict['one_finish']['current']}', end='')
-                if self.goal == 0:
-                    pass
-                elif self.goal_name_dict["task"] != None:
-                    print(f'/{progressDict['one_finish']['required']}', end='')
-                if self.goal_name_dict["task"] != None:
-                    print(')')
+                                    
+                for goal_var_name, goal_name in self.goal_name_dict.items():
+                    if goal_name != None:
 
-                if self.goal_name_dict["correct"] != None:
-                    print()
-                    print('\033[32m' + self.goal_name_dict["correct"] + END + 'は"1/END"', end='')
-                    print(f' ({progressDict['right']['current']}', end='')
-                if self.goal == 0:
-                    pass
-                elif self.goal_name_dict["correct"] != None:
-                    print(f'/{progressDict['right']['required']}', end='')
-                if self.goal_name_dict["correct"] != None:
-                    print(')')
-
-                if self.goal_name_dict["incorrect"] != None:
-                    print()
-                    print('\033[32m' + self.goal_name_dict["incorrect"] + END +'は"2/↓"', end='')
-                    print(f' ({progressDict['wrong']['current']}', end='')
-                if self.goal == 0:
-                    pass
-                elif self.goal_name_dict["incorrect"] != None:
-                    print(f'/{progressDict['wrong']['required']}', end='')
-                if self.goal_name_dict["incorrect"] != None:
-                    print(')')
-
-                if self.goal_name_dict["new"] != None:
-                    print()
-                    print('\033[32m' + self.goal_name_dict["new"] + END + 'は"3/pgDn"', end='')
-                    print(f' ({progressDict['new']['current']}', end='')
-                if self.goal == 0:
-                    pass
-                elif self.goal_name_dict["new"] != None:
-                    print(f'/{progressDict['new']['required']}', end='')
-                if self.goal_name_dict["new"] != None:
-                    print(')')
-
+                        print('\033[32m' + goal_name + END + 'は"4/←"', end='')
+                        print(f' ({progressDict[goal_var_name]['current']}', end='')
+                        print(f'/{progressDict[goal_var_name]['required']}', end='')
+                        print(')')
                 print()
                 print()
                 print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
@@ -450,32 +412,11 @@ class workSession:
                         prints.progress(int(progress))
                     print()
                     print()
-                    if self.goal_name_dict["task"] != None:
-                        print(f'{self.goal_name_dict["task"]}：{self.pages_finished_session}', end='')
-                    if self.goal == 0:
-                        pass
-                    elif self.goal_name_dict["task"] != None:
-                        print(f'/{progressDict['one_finish']['required']}', end='')
+                    for goal_var_name, goal_name in self.goal_name_dict.items():#i have goal dict bc i fucked up the names
+                        if goal_name != None:
+                            print(f'{goal_name}：{progressDict[goal_var_name]['current']}', end='')
+                            print(f'/{progressDict[goal_var_name]['required']}', end='')
 
-                    if self.goal_name_dict["correct"] != None:
-                        print(f'{self.goal_name_dict["correct"]}：{self.correct_num_session}', end='')
-                    if self.goal == 0:
-                        pass
-                        print(f'/{progressDict['right']['required']}', end='')
-
-                    if self.goal_name_dict["incorrect"] != None:
-                        print(f'{self.goal_name_dict["incorrect"]}：{self.incorrect_num_session}', end='')
-                    if self.goal == 0:
-                        pass
-                    elif self.goal_name_dict["incorrect"] != None:
-                        print(f'/{progressDict['wrong']['required']}', end='')
-                    
-                    if self.goal_name_dict["new"] != None:
-                        print(f'{self.goal_name_dict["new"]}：{self.new_num_session}', end='')
-                    if self.goal == 0:
-                        pass
-                    elif self.goal_name_dict["new"] != None:
-                        print(f'/{progressDict['new']['required']}', end='')
                     print("\033[8m")
                     self.print_minimal_ui = False
 
@@ -702,16 +643,16 @@ class workSession:
                     
                     if ready_to_start == False:
                         pass
-                    elif 'one_finish' in goals and self.goal_name_dict["task"] == None:
+                    elif 'task' in goals and self.goal_name_dict["task"] == None:
                         prints.err('choose name for task')
                         ready_to_start = False
                     elif 'new' in goals and self.goal_name_dict["new"] == None:
                         ready_to_start = False
                         prints.err('choose name for new')
-                    elif 'right' in goals and self.goal_name_dict["correct"] == None:
+                    elif 'correct' in goals and self.goal_name_dict["correct"] == None:
                         ready_to_start = False
                         prints.err('choose name for correct_full')
-                    elif 'wrong' in goals and self.goal_name_dict["incorrect"] == None:
+                    elif 'incorrect' in goals and self.goal_name_dict["incorrect"] == None:
                         ready_to_start = False
                         prints.err('choose name for incorrect_full')
                     elif ready_to_start == True:
@@ -783,10 +724,10 @@ class workSession:
         self.count = self.count + 1
         self.minute = 0
         self.tim_point = 0
-        self.pages_finished_session = 0
-        self.correct_num_session = 0
-        self.incorrect_num_session = 0
-        self.new_num_session = 0
+        self.goal_value_dict["task"] = 0
+        self.goal_value_dict["correct"] = 0
+        self.goal_value_dict["incorrect"] = 0
+        self.goal_value_dict["new"] = 0
         self.past_correct_len = self.correct_full
         self.session_time_finished = False
         self.the_time = 0
@@ -932,34 +873,34 @@ class workSession:
             if self.goal_name_dict["task"] == None:
                 pass
             elif one_finish < 0:
-                self.pages_finished_session += goal_add_value(1, self.goal_name_dict["task"])
+                self.goal_value_dict["task"] += goal_add_value(1, self.goal_name_dict["task"])
                 self.print_minimal_ui = True
-                self.finished_content_list.append('one_finish')
+                self.finished_content_list.append('task')
                 keypres(1)
 
             right = win32api.GetKeyState(0x61)
             if self.goal_name_dict["correct"] == None:
                 pass
             elif right < 0:                            
-                self.correct_num_session += goal_add_value(1, self.goal_name_dict["correct"])
+                self.goal_value_dict["correct"] += goal_add_value(1, self.goal_name_dict["correct"])
                 self.print_minimal_ui = True
-                self.finished_content_list.append('right')
+                self.finished_content_list.append('correct')
                 keypres(1)
 
             wrong = win32api.GetKeyState(0x62)
             if self.goal_name_dict["incorrect"] == None:
                 pass
             elif wrong < 0:
-                self.incorrect_num_session += goal_add_value(1, self.goal_name_dict["incorrect"])
+                self.goal_value_dict["incorrect"] += goal_add_value(1, self.goal_name_dict["incorrect"])
                 self.print_minimal_ui = True
-                self.finished_content_list.append('wrong')
+                self.finished_content_list.append('incorrect')
                 keypres(1)
                     
             new = win32api.GetKeyState(0x63)
             if self.goal_name_dict["new"] == None:
                 pass
             elif new < 0:
-                self.new_num_session += goal_add_value(1, self.goal_name_dict["new"])
+                self.goal_value_dict["new"] += goal_add_value(1, self.goal_name_dict["new"])
                 self.print_minimal_ui = True
                 self.finished_content_list.append('new')
                 keypres(1)
@@ -973,26 +914,26 @@ class workSession:
                 sleep(0.1)
             if self.last_finished_content == None:
                 pass
-            elif self.last_finished_content == 'one_finish':
-                self.pages_finished_session -= 1
+            elif self.last_finished_content == 'task':
+                self.goal_value_dict["task"] -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
 
-            elif self.last_finished_content == 'right':
-                self.correct_num_session -= 1
+            elif self.last_finished_content == 'correct':
+                self.goal_value_dict["correct"] -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
 
-            elif self.last_finished_content == 'wrong':
-                self.incorrect_num_session -= 1
+            elif self.last_finished_content == 'incorrect':
+                self.goal_value_dict["incorrect"] -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
                 
             elif self.last_finished_content == 'new':
-                self.new_num_session -= 1
+                self.goal_value_dict["new"] -= 1
                 self.print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
@@ -1027,7 +968,7 @@ class workSession:
                     msvcrt.getch()
                 os.system('cls')
                 while True:
-                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'one_finish': self.pages_finished_session, 'right': self.correct_num_session, 'wrong': self.incorrect_num_session, 'new': self.new_num_session})
+                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]})
                     if self.progress != 100 and not self.goal == 0:
                         print("タスクがまだ完了していません。\n本当に", end='')
                     print("終了しますか +/-")
@@ -1052,15 +993,15 @@ class workSession:
 
     def wrap_up_session(self):
         int(time.time())
-        self.finished_goals = {int(time.time()): {self.goal_name_dict["task"]: self.pages_finished_session, 
-                                             self.goal_name_dict["new"]: self.new_num_session, 
-                                             self.goal_name_dict["correct"]: self.correct_num_session,
-                                             self.goal_name_dict["incorrect"]: self.incorrect_num_session}}
+        self.finished_goals = {int(time.time()): {self.goal_name_dict["task"]: self.goal_value_dict["task"], 
+                                             self.goal_name_dict["new"]: self.goal_value_dict["new"], 
+                                             self.goal_name_dict["correct"]: self.goal_value_dict["correct"],
+                                             self.goal_name_dict["incorrect"]: self.goal_value_dict["incorrect"]}}
 
-        self.pages_finished_full += self.pages_finished_session
-        self.new_words_full += self.new_num_session
-        self.correct_full += self.correct_num_session
-        self.incorrect_full += self.incorrect_num_session
+        self.pages_finished_full += self.goal_value_dict["task"]
+        self.new_words_full += self.goal_value_dict["new"]
+        self.correct_full += self.goal_value_dict["correct"]
+        self.incorrect_full += self.goal_value_dict["incorrect"]
 
         self.past_goal_name_dict = self.goal_name_dict
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}

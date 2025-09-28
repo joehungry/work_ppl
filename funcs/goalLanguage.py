@@ -30,7 +30,7 @@ def breakdownParentheses(oringinalString):
 
 
 def breakdownGoalSingleInput(goalInput):
-    goalCommand = {"new": 'new', 'nw': 'new', "correct": 'right', "c": 'right', "incorrect": 'wrong', "x": 'wrong', "X": 'wrong', "solve": ['right', 'wrong'], "sv": ['right', 'wrong'], "task": 'one_finish', "tsk": 'one_finish', "tk": 'one_finish'}
+    goalCommand = {"new": 'new', 'nw': 'new', "correct": 'correct', "c": 'correct', "incorrect": 'incorrect', "x": 'incorrect', "X": 'incorrect', "solve": ['correct', 'incorrect'], "sv": ['correct', 'incorrect'], "task": 'task', "tsk": 'task', "tk": 'task'}
 
     tempGoalName = None
     tempGoalQuota = None
@@ -54,7 +54,10 @@ def breakdownGoalSingleInput(goalInput):
     for i in tempGoalNameList:
         if not i in goalCommand:
             return None, None
-        [goalNameList.append(a) for a in goalCommand[i]]
+        if isinstance(goalCommand[i], list) == True:
+            [goalNameList.append(a) for a in goalCommand[i]]
+        else:
+            goalNameList.append(goalCommand[i])
         if tempGoalQuota == 'd' or tempGoalQuota == 'done':
             goalQuota = 1
         elif num.isNum(tempGoalQuota):
@@ -235,4 +238,4 @@ def breakdownGoalInput(originalString):
 if __name__ == '__main__':
     #print(breakdownGoalInput('(t and c = 2) and y= 5'))
     #print(breakdownGoalInput('t and (c = 2 and x= 5)'))
-    print(breakdownGoalInput('sv = 10'))
+    print(breakdownGoalInput('c = 1 and sv= 1'))
