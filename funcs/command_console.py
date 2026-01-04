@@ -246,7 +246,7 @@ class command_executor:
         goal_to_change = ""
         if '\\' in command_value:#command_value[1:] is bc of L'\s "\" part. i dont need this part
             preset_value_dict = check_value_preset(command_value[1:], self.value_preset_dict)
-            goal_to_change = preset_value_dict["same_content"] #so that it adds same_ when making the same thing i know its conveluted
+            goal_to_change = 'same_' #so that it adds same_ when making the same thing i know its conveluted
             command_value = None
         goal_to_change += local_preset[command_key]
         return {"name_goal": f'{goal_to_change}:{command_value}', "print": f'{local_preset[command_key]} is {self.temp_value}'}

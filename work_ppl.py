@@ -125,6 +125,7 @@ class workSession:
 
         self.filetype = None
         self.user_made_file_content = None
+        self.past_goal_name_dict = {}
 
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
         self.goal_value_dict = {"task": 0, "new": 0, "correct": 0, "incorrect": 0}
@@ -528,7 +529,7 @@ class workSession:
 
                 case 'overwrite_diary':
                     self.diary =  cli_output[command]
-                    self.comment_list.append(self.diary)
+                    self.comment_list = [self.diary]
                     self.comment_index = len(self.comment_list)-1
                     print_var.append(self.diary)
 
@@ -708,13 +709,21 @@ class workSession:
                 case 'goal_prompt':
                     self.temp_past_goal = cli_output[command]
                 case "name_goal":
+                    temp, goals = goalProgress.get_goal_progress(self.goal, {})#i dont need the session data, i just need the goals, but i don't want a tuple objects
                     goal_to_change, goal_name = splice.splice(cli_output[command], ":", "str")
                     if "same_" in goal_to_change:
                         goal_to_change = goal_to_change[5:] #removes same_ from the var
                         self.goal_name_dict[goal_to_change], print_var, error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
                     else:
                         self.goal_name_dict[goal_to_change] = goal_name
+
+                    if not goal_to_change in goals:
+                        self.goal_name_dict[goal_to_change] = None
+                        prints.err(f'goalError: "{goal_to_change}" has not been selected for session')
+                        return None
+                    else:
                         print_var.append(goal_name)
+                    print(self.goal_name_dict)
 
                 case 'print':
                     if error == False:
