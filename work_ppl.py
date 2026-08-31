@@ -137,6 +137,7 @@ class workSession:
 
         persistent_data_file = file.content('REPORT\\logs', 'progress.txt', lock=True)
         settings_file = file.content('REPORT\\logs', 'settings.txt', lock=True)
+        past_goal_file = file.content('REPORT\\logs', 'past_goal.txt', lock=True)
         subprocess.check_call(["attrib","+H","REPORT\\logs"])
 
         persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words_full': 0, 'correct_full': 0, 'incorrect_full': 0, 'pages_finished_full': 0, 'recess_now': 0, 'past_goal': None, 'last_study_time': None, 'label_base': None, 'today': None}
@@ -144,7 +145,11 @@ class workSession:
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
         settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False, 'music_on': True, 'filename': None, 'filedir': None}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
-        subprocess.check_call(["attrib","+H", 'REPORT\\logs\\Settings.txt'])
+        subprocess.check_call(["attrib","+H", 'REPORT\\logs\\settings.txt'])
+        self.manage_goal_dict = data.manage(self.goal_name_dict, past_goal_file)
+        self.past_goal_name_dict = self.manage_goal_dict.extract_from_file()
+
+
 
 
         file.content(f'REPORT\\music')
@@ -251,17 +256,30 @@ class workSession:
         self.recess = extract_if_True(extracted_dict['recess_now'], isToday)
         self.manage_persistent_data.change_value({'recess_now': self.recess})
 
-        self.past_goal = extract_if_True(extracted_dict['past_goal'], isToday)
-        self.manage_persistent_data.change_value({'past_goal': self.past_goal})
+        past_goal_str = extract_if_True(extracted_dict['past_goal'], isToday)
+        if past_goal_str == 0:
+            past_goal_str = None
+
+        self.manage_persistent_data.change_value({'past_goal': past_goal_str})
+        if past_goal_str != None:
+            from funcs import goalLanguage
+            self.past_goal = goalLanguage.breakdownGoalInput(past_goal_str)
+        else:
+            self.past_goal = None
 
         self.label_base = extract_if_True(extracted_dict['label_base'], isToday)
+        if self.label_base == 0:
+            self.label_base = None
+
         self.manage_persistent_data.change_value({'label_base': self.label_base})
+
+        self.past_points = extract_if_True(extracted_dict['current_points'], isToday)
+        self.manage_persistent_data.change_value({'current_points': self.past_points})
 
         self.manage_persistent_data.change_value({'today': today})
 
         if self.recess == None:
             self.recess = 0
-        self.past_points = extracted_dict['current_points']
         self.last_study_time = extracted_dict['last_study_time']
 
         extracted_dict = self.manage_settings_data.extract_from_file()
@@ -364,6 +382,7 @@ class workSession:
     
     def ui_screen(self, ui_type):
         goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
+        goal_keys_dict = {'correct': '1/end', 'incorrect': '2/↓', 'new': '3/PgDn', 'task': '4/←'}
         match ui_type:
             case 'session_ui':#main_ui
                 print(END)
@@ -386,11 +405,11 @@ class workSession:
                                     
                 for goal_var_name, goal_name in self.goal_name_dict.items():
                     if goal_name != None:
-
-                        print('\033[32m' + goal_name + END + 'は"4/←"', end='')
+                        print(f'\033[32m{goal_name}{END}は"{goal_keys_dict[goal_var_name]}"', end='')
                         print(f' ({progressDict[goal_var_name]['current']}', end='')
                         print(f'/{progressDict[goal_var_name]['required']}', end='')
                         print(')')
+                    
                 print()
                 print()
                 print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
@@ -417,9 +436,11 @@ class workSession:
                         if goal_name != None:
                             print(f'{goal_name}：{progressDict[goal_var_name]['current']}', end='')
                             print(f'/{progressDict[goal_var_name]['required']}', end='')
+                            print()
 
                     print("\033[8m")
                     self.print_minimal_ui = False
+                    self.session_time_finished = False
 
             case 'ending_screen_ui':
                 print()
@@ -705,24 +726,33 @@ class workSession:
                     self.goal = 0
                     print_var.append('goal is None')
                 case 'goal_same_goal':
-                    self.past_goal, print_var, error = check_same_command(self.past_goal, print_var, 'past goal does not exist')
+                    self.goal, print_var, error = check_same_command(self.past_goal, print_var, 'past goal does not exist')
                 case 'goal_prompt':
                     self.temp_past_goal = cli_output[command]
                 case "name_goal":
                     temp, goals = goalProgress.get_goal_progress(self.goal, {})#i dont need the session data, i just need the goals, but i don't want a tuple objects
                     goal_to_change, goal_name = splice.splice(cli_output[command], ":", "str")
+                    same = False
                     if "same_" in goal_to_change:
                         goal_to_change = goal_to_change[5:] #removes same_ from the var
-                        self.goal_name_dict[goal_to_change], print_var, error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
-                    else:
-                        self.goal_name_dict[goal_to_change] = goal_name
+                        same = True
 
-                    if not goal_to_change in goals:
-                        self.goal_name_dict[goal_to_change] = None
-                        prints.err(f'goalError: "{goal_to_change}" has not been selected for session')
-                        return None
+                    if goal_to_change == 'solve':
+                        prints.err(f'goalError: independently select elements for mixed commands')
                     else:
-                        print_var.append(goal_name)
+                        if same == True:
+                            self.goal_name_dict[goal_to_change], print_var, error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
+                            goal_name = self.goal_name_dict[goal_to_change]
+                        else:
+                            self.goal_name_dict[goal_to_change] = goal_name
+
+                        if not goal_to_change in goals:
+                            self.goal_name_dict[goal_to_change] = None
+                            prints.err(f'goalError: "{goal_to_change}" has not been selected for session')
+                            return None
+                        else:
+                            self.manage_goal_dict.change_value({goal_to_change: goal_name})
+                            print_var.append(goal_name)
                     print(self.goal_name_dict)
 
                 case 'print':
@@ -768,8 +798,8 @@ class workSession:
             self.showTime = self.the_time
 
         
-        self.second = self.showTime - self.minute * 60
         self.minute = math.floor(self.showTime/60)
+        self.second = self.showTime - self.minute * 60
         #Changes were made so that even if unforseen elements cause the program to not calculate the amount, rebooting(?) the program will achive the same result as calculating it real-time
         if self.the_time > self.past_count:
             self.the_countdown_time = self.the_time
@@ -976,6 +1006,7 @@ class workSession:
                 while msvcrt.kbhit():
                     msvcrt.getch()
                 os.system('cls')
+                print(END, end='')
                 while True:
                     self.progress, temp = goalProgress.get_goal_progress(self.goal, {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]})
                     if self.progress != 100 and not self.goal == 0:
@@ -1002,10 +1033,10 @@ class workSession:
 
     def wrap_up_session(self):
         int(time.time())
-        self.finished_goals = {int(time.time()): {self.goal_name_dict["task"]: self.goal_value_dict["task"], 
-                                             self.goal_name_dict["new"]: self.goal_value_dict["new"], 
-                                             self.goal_name_dict["correct"]: self.goal_value_dict["correct"],
-                                             self.goal_name_dict["incorrect"]: self.goal_value_dict["incorrect"]}}
+        self.finished_goals[int(time.time())] = {self.goal_name_dict["task"]: self.goal_value_dict["task"], 
+            self.goal_name_dict["new"]: self.goal_value_dict["new"], 
+            self.goal_name_dict["correct"]: self.goal_value_dict["correct"],
+            self.goal_name_dict["incorrect"]: self.goal_value_dict["incorrect"]}
 
         self.pages_finished_full += self.goal_value_dict["task"]
         self.new_words_full += self.goal_value_dict["new"]
@@ -1013,6 +1044,7 @@ class workSession:
         self.incorrect_full += self.goal_value_dict["incorrect"]
 
         self.past_goal_name_dict = self.goal_name_dict
+        self.manage_goal_dict.write_to_file()
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
 
         if not self.temp_past_goal == None:
@@ -1033,6 +1065,7 @@ class workSession:
         if self.delete_log_file == True:
             self.log_file.delete_file()
             subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
+            self.delete_log_file = False
         self.write_log_files()
         self.write_diary_file()
         self.past_label = self.label

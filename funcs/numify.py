@@ -4,7 +4,7 @@ def create(*elements):
     plantoNum = ''
     finalElements = []
     for i in elements:
-        if type(i) == tuple or type == list:
+        if type(i) == tuple or type(i) == list:
             for listedElement in list(i):
                 finalElements.append(listedElement)
         else:

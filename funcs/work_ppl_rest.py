@@ -40,14 +40,14 @@ class rest_elements:
                 print('\033[0m' + "ポイント：", (self.last_session_show + self.REST_TIME_POINTS * self.REST_POINT_CONVERSION_RATE))
                 print()
                 print()
-                print('休みが終わったら"' + color_for_rest_ui + 'end' + END + '"キー')
+                print('休みが終わったら"' + color_for_rest_ui + '0/Ins' + END + '"キー')
 
             case 'rest_ui':
                 print()
                 print('\033[0m' + "ポイント：", (self.last_session_show + self.REST_TIME_POINTS * self.REST_POINT_CONVERSION_RATE))
                 print()
                 print()
-                print('休みが終わったら"' + color_for_rest_ui + 'end' + END + '"キー')
+                print('休みが終わったら"' + color_for_rest_ui + '0/Ins' + END + '"キー')
                 print()
                 if self.rest_time_left >= 0:
                     print(self.rest_minute, "分", self.rest_second, "秒")

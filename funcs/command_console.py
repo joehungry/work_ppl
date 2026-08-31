@@ -241,7 +241,7 @@ class command_executor:
     
     def change_goal_name(self, command_key, command_value):
         return_value_dict = {}
-        local_preset = {'C': 'correct', 'X': 'incorrect', 'TK': 'task', 'TSK': 'task', 'NW': 'new'}
+        local_preset = {'C': 'correct', 'X': 'incorrect', 'TK': 'task', 'TSK': 'task', 'NW': 'new', 'SV': 'solve'}
         value_preset_content = {'same_content': {'same_content': "same_"}, 'no_content': {}, 'use_content': {}}
         goal_to_change = ""
         if '\\' in command_value:#command_value[1:] is bc of L'\s "\" part. i dont need this part
@@ -258,7 +258,7 @@ class cli:
                                          'S': 'turn_sound_on', 'TL': 'set_time_label', 'LT': 'set_time_label', 
                                          'p': 'set_points', 'P': 'set_points', 'Lb': 'set_label_base', 
                                          'C': 'change_goal_name', 'X': 'change_goal_name', 'TK': 'change_goal_name',  'TSK': 'change_goal_name', 
-                                         'NW': 'change_goal_name'}
+                                         'NW': 'change_goal_name', 'SV': 'change_goal_name'}
         self.no_split_command_dict = {'p': 'set_points', 'P': 'set_points', 'start': 'start_session', '': 'start_session', 
                                          'F-': 'remove_file_index'}
         self.space_split_command_dict = {'sound': 'turn_sound_on', 'email': 'turn_email_on', 'mail': 'turn_email_on',
