@@ -1141,12 +1141,27 @@ class workSession:
 
 if __name__ == '__main__':
 
+    from funcs import prints
+    load_num = 0
+
+    load_num += 1
+    prints.loading(load_num)
     import math, msvcrt, os
-    from funcs import prints, num, file, data, work_ppl_rest, play_music, command_console
+    load_num += 1
+    prints.loading(load_num)
+    from funcs import num, file, data, work_ppl_rest, play_music, command_console
+    load_num += 1
+    prints.loading(load_num)
 
     import datetime, time, win32api, subprocess
+    load_num += 1
+    prints.loading(load_num)
     from time import sleep
+    load_num += 1
+    prints.loading(load_num)
     from funcs import sendEmail, goalProgress, splice
+    load_num += 1
+    prints.loading(load_num)
 
     print("\033[8m")
     print("\033[0m")
@@ -1162,12 +1177,27 @@ if __name__ == '__main__':
     now_start = datetime.datetime.today()
     started_time = str(now_start.time())[:8]
     today = str(now_start)[:10]
+    load_num += 1
+    prints.loading(load_num)
 
     session = workSession()
+    load_num += 1
+    prints.loading(load_num)
+
     first_rest, opening_string = session.extract_data_from_file()
+    load_num += 1
+    prints.loading(load_num)
+
     session.import_settings()
+    load_num += 1
+    prints.loading(load_num)
+
     os.system('cls')
     session.writing_start_of_file()
+    load_num += 1
+    prints.loading(load_num)
+
+    os.system('cls')
     print('始めます [Enter]')
     print(opening_string, end='')
     start_first_rest = False
