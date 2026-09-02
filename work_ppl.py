@@ -354,14 +354,14 @@ class workSession:
             what_to_write += f'\n\n'
         what_to_write += '\n'
         what_to_write += f'started program:{started_time}'
-        self.study_content_file.save(what_to_write, lock=True)
+        self.study_content_file.save(what_to_write, lock=True, sameLN=True)
 
         point_detail_file_data = self.point_detail_file.fetch()
         what_to_write = ''
         if not point_detail_file_data == []:
             what_to_write += f'\n\n\n'
         what_to_write += f'{"_" * 82}\n\nstarted : {started_time}'
-        self.point_detail_file.save(what_to_write, lock=True)
+        self.point_detail_file.save(what_to_write, lock=True, sameLN=True)
     
 
     def rest(self, time_of_rest):
@@ -415,6 +415,8 @@ class workSession:
                 print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
                 print()
                 print()
+                if self.hour != 0:
+                    print(f'{self.hour} hr ', end='')
                 print(f'{self.minute} min {self.second} sec')
                 print()
                 if not self.add_point == 0:
@@ -762,6 +764,7 @@ class workSession:
     def initialize_session(self):
         self.count = self.count + 1
         self.minute = 0
+        self.hour = 0
         self.tim_point = 0
         self.goal_value_dict["task"] = 0
         self.goal_value_dict["correct"] = 0
@@ -797,9 +800,10 @@ class workSession:
         else:
             self.showTime = self.the_time
 
-        
-        self.minute = math.floor(self.showTime/60)
-        self.second = self.showTime - self.minute * 60
+        self.hour = math.floor(self.showTime / 3600)
+        self.minute = math.floor((self.showTime - (self.hour * 3600)) / 60)
+        self.second = self.showTime - (self.minute * 60) - (self.hour * 3600)
+
         #Changes were made so that even if unforseen elements cause the program to not calculate the amount, rebooting(?) the program will achive the same result as calculating it real-time
         if self.the_time > self.past_count:
             self.the_countdown_time = self.the_time
