@@ -127,6 +127,9 @@ class command_executor:
         
     def change_file_command_type(self, command_key, command_value):
         return_dict = {}
+        today = datetime.datetime.now()
+        today_foratted = today.strftime('%Y-%m-%d %H:%M:%S')
+
         diary_type = {'write': 'write', 'w': 'write', 'change': 'change', 'c': 'change', 'save': 'save', 'sv': 'save'} 
         index_moving = {'back': 'go_back_to_original_place', 'r': 'go_back_to_original_place',
                          'return': 'go_back_to_original_place', 'top': 'go_to_head_of_index', 't': 'go_to_head_of_index', }
@@ -138,8 +141,14 @@ class command_executor:
             return_dict['move_file_index'] = index_preset_vale
         elif num.isInt(command_value):
             return_dict['move_file_index'] = int(command_value)
-        if not return_dict == {}:
-            return return_dict
+        if return_dict == {}:
+            return_dict['new_diary_entry'] = True
+        else:
+             return_dict['new_diary_entry'] = False
+        return_dict['overwrite_diary'] = command_value
+        return_dict['diary_written_time'] = today_foratted
+
+        return return_dict
     
     def add_comment(self, command_key, command_value):
         return {'add_comment': command_value}
@@ -147,7 +156,7 @@ class command_executor:
     def remove_file_index(self, command_key, command_value):
         return {'remove_file_index': None}
     
-    def overwrite_diary(self, command_key, command_value):
+    def overwrite_diary(self, command_key, command_value): #defunct
         today = datetime.datetime.now()
         today_foratted = today.strftime('%Y-%m-%d %H:%M:%S')
         return {'overwrite_diary': command_value, 'diary_written_time': today_foratted}
@@ -253,18 +262,17 @@ class command_executor:
 
 class cli:
     def __init__(self, temp_value):
-        self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'overwrite_diary', 'F': 'change_file_command_type', 
-                                         'F+': 'add_comment', 'F-': 'remove_file_index',
+        self.colon_split_command_dict = {'L': 'set_label', 'L+':'add_to_past_label', 'T': 'set_time', 'D': 'change_file_command_type', 
+                                         'D+': 'add_comment', 'D-': 'remove_file_index',
                                          'S': 'turn_sound_on', 'TL': 'set_time_label', 'LT': 'set_time_label', 
                                          'p': 'set_points', 'P': 'set_points', 'Lb': 'set_label_base', 
                                          'C': 'change_goal_name', 'X': 'change_goal_name', 'TK': 'change_goal_name',  'TSK': 'change_goal_name', 
                                          'NW': 'change_goal_name', 'SV': 'change_goal_name'}
         self.no_split_command_dict = {'p': 'set_points', 'P': 'set_points', 'start': 'start_session', '': 'start_session', 
-                                         'F-': 'remove_file_index'}
+                                         'D-': 'remove_file_index'}
         self.space_split_command_dict = {'sound': 'turn_sound_on', 'email': 'turn_email_on', 'mail': 'turn_email_on',
                                          'show': 'show_value', 'end': 'end_something', 'volume': 'change_sound_volume',
-                                         'change': 'change_settings', 'use': 'use_content', 'goal': 'set_goal', 'g': 'set_goal', 
-                                         'filetype': 'set_filetype', 'open': 'choose_file', 'dir': 'choose_dir'}
+                                         'change': 'change_settings', 'use': 'use_content', 'goal': 'set_goal', 'g': 'set_goal'}
         execute = command_executor(temp_value)
         self.command_content_dict = {'set_label': execute.set_label, 'set_time': execute.set_time, 'change_file_command_type': execute.change_file_command_type, 
                                      'turn_sound_on': execute.turn_sound_on, 'turn_email_on': execute.turn_email_on, 
@@ -273,7 +281,6 @@ class cli:
                                      'end_something': execute.end_something, 'change_sound_volume': execute.change_sound_volume,
                                      'change_settings': execute.change_settings, 'use_content': execute.use_content, 'set_goal': execute.set_goal,
                                      'add_comment': execute.add_comment, 'remove_file_index': execute.remove_file_index, 'overwrite_diary': execute.overwrite_diary,
-                                     'choose_file': execute.choose_file, 'choose_dir': execute.choose_dir, 'set_filetype': execute.set_filetype, 
                                      'set_label_base': execute.set_label_base, 'change_goal_name': execute.change_goal_name}
         self.command_key = None
         self.command_value = None
@@ -304,5 +311,5 @@ class cli:
 
 if __name__ == '__main__':
     cli_test = cli('$')
-    cli_test.get_command('NW\'ページ数')
+    cli_test.get_command('D\'w')
     print(cli_test.execute_command())

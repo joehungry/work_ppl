@@ -100,6 +100,7 @@ class workSession:
         self.study_time = None
         self.email_on = True
 
+        self.filetype = 'diary' #i had a whole file operation system but i don't need that anymore so only diary type
         self.diary = None
         self.comment_command_type = None
         self.comment_index = 0
@@ -550,53 +551,28 @@ class workSession:
                         error = True
                         prints.err('past session does not exist')
 
+                case 'new_diary_entry':
+                    new_diary_entry = cli_output[command]
+
                 case 'overwrite_diary':
-                    self.diary =  cli_output[command]
-                    self.comment_list = [self.diary]
-                    self.comment_index = len(self.comment_list)-1
-                    print_var.append(self.diary)
+                    if self.diary == None: #if its the first time im writing a diary, then write in it
+                        self.diary =  cli_output[command]
+                        self.comment_list = [self.diary]
+                        self.comment_index = len(self.comment_list)-1
+                        print_var.append(self.diary)
+                    elif new_diary_entry == True: #if its not the first time, but for some reason there isn't any valid command, show error
+                        prints.err("enter valid command")
 
                 case 'diary_written_time':
                     if self.comment_time == None:
                         self.comment_time = cli_output[command]
 
-                case 'filename':
-                    self.user_made_file = cli_output[command]
-                    self.manage_settings_data.change_value({'filename': cli_output[command]})
-                    self.user_made_file_content = file.content(self.user_made_dir, self.user_made_file)
-                    self.comment_list = self.user_made_file_content.fetch()
-                    self.comment_index = len(self.comment_list)-1
-
-                case 'dirname':
-                    self.user_made_dir = cli_output[command]
-                    self.manage_settings_data.change_value({'dirname': cli_output[command]})
-
-                case 'filetype':
-                    self.filetype = cli_output[command]
-
-
                 case 'file_content':
-                    if self.filetype == None:
-                        prints.err('please specify filetype')
-                        return None
-                    if not self.filetype == 'diary' and self.user_made_file == None:
-                        prints.err('please specify file')
-                        return None
                     self.comment_command_type = cli_output[command]
-
                     #it saves my progress
-                    if not self.comment_command_type == 'save':
-                        pass
-                    elif self.filetype == 'diary':
+                    if self.comment_command_type == 'save':
                         self.diary = '\n'.join(self.comment_list)
-                    elif self.filetype == 'goal':
-                        comment = [f'{ilen+1}.{i}' for ilen, i in enumerate(self.comment_list)]
-                        comment_string = '\n'.join(comment)
-                        self.user_made_file_content.save(comment_string, overwrite=True, lock=True)
-                    elif self.filetype == 'none':
-                        comment_string = '\n'.join(self.comment_list)
-                        self.user_made_file_content.save(comment_string, overwrite=True, lock=True)
-
+                        self.comment_command_type = None
 
                 case 'move_file_index':
                     if cli_output[command] == 'go_back_to_original_place':
@@ -615,7 +591,7 @@ class workSession:
 
                 case 'add_comment':
                     if self.comment_command_type == None:
-                        prints.err("execute F' command first")
+                        prints.err("specify file operation type (w[insert] c[overwrite])")
                     elif self.comment_list == None:
                         prints.err('please write diary first')
                     elif self.comment_command_type == 'write':
@@ -664,6 +640,10 @@ class workSession:
                         error = True
                     if ready_to_start == True:
                         temp, goals = goalProgress.get_goal_progress(self.goal, {})#i dont need the session data, i just need the goals, but i don't want a tuple objects
+                    if ready_to_start == False:
+                        pass
+                    elif len(self.comment_list) != 0:
+                        self.diary = '\n'.join(self.comment_list)
                     
                     if ready_to_start == False:
                         pass
@@ -697,6 +677,7 @@ class workSession:
                 case 'show_goals':
                     print(str(self.goal))
                 case 'show_comment':
+                    self.diary = '\n'.join(self.comment_list)
                     print(self.diary)
                 case 'show_file':
                     [print(f'{ilen}.{i}') for ilen, i in enumerate(self.comment_list)]
