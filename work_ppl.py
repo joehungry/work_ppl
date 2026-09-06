@@ -110,7 +110,7 @@ class workSession:
 
         self.goal = None
         self.temp_past_goal = None
-        self.add_point = None
+        self.add_point = 1
 
         self.start_session = None
         self.current_points = 0
@@ -1065,7 +1065,7 @@ class workSession:
 
         self.last_study_time = self.study_time
         self.study_time = None
-        self.add_point = None
+        self.add_point = 1
         self.goal = None
         os.system('cls')
 
