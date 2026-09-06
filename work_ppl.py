@@ -28,7 +28,7 @@ def CheckAnswer(question):
     print()
     answer = input(">> ")
     if answer == '':
-        os.system('cls')
+        subprocess.run("cls", shell=True)
         no_error = False
         print()
         prints.err("何か入力してください")
@@ -38,7 +38,7 @@ def CheckAnswer(question):
             return answer
     
         except:
-            prints.err('数字を入力してください')
+            #prints.err('数字を入力してください')
             return answer
 
 def print_string_true_false(temp_value, string, temp_replacement):
@@ -93,7 +93,6 @@ def check_same_command(past_value, print_var, error_msg):
 
 class workSession:
     def __init__(self):
-        self.first_recess = 10
         self.label = None
         self.recommended_label = None
 
@@ -330,7 +329,7 @@ class workSession:
         self.last_session_at_start = self.past_points
         self.count = self.count_one
         if self.continuous_time == 0 and self.recess <= 0:
-            self.recess = self.first_recess
+            self.recess = 10 #first recess time
 
         if float(self.recess) > 0:
             opening_string = f'\n>> There is unused rest: {self.recess} minutes\n'
@@ -428,7 +427,7 @@ class workSession:
             case 'minimal_session_ui':
                 if self.print_minimal_ui == True:
                     progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
-                    os.system('cls')
+                    subprocess.run("cls", shell=True)
                     print(END)
                     print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ')
                     if not self.goal == 0:
@@ -682,7 +681,7 @@ class workSession:
                 case 'show_file':
                     [print(f'{ilen}.{i}') for ilen, i in enumerate(self.comment_list)]
                 case 'end_study':
-                    os.system('cls')
+                    subprocess.run("cls", shell=True)
                     return False
                 case 'volume':
                     self.volume = cli_output[command]
@@ -984,13 +983,13 @@ class workSession:
                 self.session_time_finished = True
             sleep(0.02)
             if not self.swich_ui == 2:
-                os.system('cls')
+                subprocess.run("cls", shell=True)
 
             fin = win32api.GetKeyState(0x60)
             if fin < 0:
+                subprocess.run("cls", shell=True)
                 while msvcrt.kbhit():
                     msvcrt.getch()
-                os.system('cls')
                 print(END, end='')
                 while True:
                     self.progress, temp = goalProgress.get_goal_progress(self.goal, {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]})
@@ -999,7 +998,7 @@ class workSession:
                     print("終了しますか +/-")
                     finish = input(">> ")
                     if finish == "":
-                        os.system('cls')
+                        subprocess.run("cls", shell=True)
 
                     elif finish == "-" or finish == "n":
                         sleep(0.1)
@@ -1009,12 +1008,10 @@ class workSession:
                     elif finish == '+' or finish == "y":
                         self.calculate_time_and_point()
                         self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
-
-                        os.system('cls')
                         return True
                     else:
+                        subprocess.run("cls", shell=True)
                         prints.err('input error')
-                    os.system('cls')
 
     def wrap_up_session(self):
         int(time.time())
@@ -1067,7 +1064,7 @@ class workSession:
         self.study_time = None
         self.add_point = 1
         self.goal = None
-        os.system('cls')
+        subprocess.run("cls", shell=True)
 
     def handle_rest_time(self, recess):
         self.recess = recess
@@ -1117,7 +1114,7 @@ class workSession:
         while True:
             self.ui_screen('finished_study_ui')
             ok = input("\033[8m")
-            os.system('cls')
+            subprocess.run("cls", shell=True)
 
     def error_has_occured(self):
         print(self.continuous_time)
@@ -1150,7 +1147,7 @@ if __name__ == '__main__':
 
     print("\033[8m")
     print("\033[0m")
-    os.system('cls')
+    subprocess.run("cls", shell=True)
 
     Title = "WORK PPL"
 
@@ -1177,12 +1174,12 @@ if __name__ == '__main__':
     load_num += 1
     prints.loading(load_num)
 
-    os.system('cls')
+    subprocess.run("cls", shell=True)
     session.writing_start_of_file()
     load_num += 1
     prints.loading(load_num)
 
-    os.system('cls')
+    subprocess.run("cls", shell=True)
     print('始めます [Enter]')
     print(opening_string, end='')
     start_first_rest = False
@@ -1200,7 +1197,7 @@ if __name__ == '__main__':
         session.rest(first_rest)
         session.rest_time_to_points(first_rest)
 
-    os.system('cls')
+    subprocess.run("cls", shell=True)
     while True:
         session.initialize_session()
         sleep(0.45)
@@ -1209,12 +1206,12 @@ if __name__ == '__main__':
         full_recess = session.adjust_value()
         recess = session.handle_rest_time(full_recess)
         session.rest_time_to_points(recess)
-        os.system('cls')
+        subprocess.run("cls", shell=True)
         continue_session = session.chceck_if_continue(recess)
-        os.system('cls')
+        subprocess.run("cls", shell=True)
         if continue_session == False:
             session.finish_program()
-        os.system('cls')
+        subprocess.run("cls", shell=True)
         print('始めます [Enter]')
         while True:
             print()
