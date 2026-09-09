@@ -4,7 +4,7 @@ def seconds_to_hms(seconds):
     done_hr = math.floor(seconds / 3600)
     done_min = math.floor((seconds - (done_hr* 3600)) / 60)
     done_sec = int(seconds - (done_min * 60) - (done_hr * 3600))
-    return done_hr, done_min, done_sec        
+    return done_hr, done_min, done_sec     
 
 def return_time():
     now = (datetime.datetime.today())
@@ -19,6 +19,11 @@ def goal_add_value(amount, goal_name):
     if goal_name == None:
         return 0
     return amount
+
+def add_goal_time(goal_name, goal_start_time):
+    new_goal_start_time = time.time()
+    return [goal_name, new_goal_start_time-goal_start_time], new_goal_start_time
+
         
 
 #質問をし答えをVariableに記録します
@@ -131,11 +136,8 @@ class workSession:
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
         self.goal_value_dict = {"task": 0, "new": 0, "correct": 0, "incorrect": 0}
 
-
         self.finished_goals = {}
-
-
-
+        self.goal_time_list = []
         persistent_data_file = file.content('REPORT\\logs', 'progress.txt', lock=True)
         settings_file = file.content('REPORT\\logs', 'settings.txt', lock=True)
         past_goal_file = file.content('REPORT\\logs', 'past_goal.txt', lock=True)
@@ -150,20 +152,15 @@ class workSession:
         self.manage_goal_dict = data.manage(self.goal_name_dict, past_goal_file)
         self.past_goal_name_dict = self.manage_goal_dict.extract_from_file()
 
-
-
-
         file.content(f'REPORT\\music')
         self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt', lock=True)
         self.point_detail_file = file.content(f'REPORT\\log of points\\{str(now_start.year)}\\{now_start.month}', f'point {str(today)}.txt', lock=True)
         self.study_content_file = file.content(f'REPORT\\log of studied content\\{str(now_start.year)}\\{now_start.month}', f'content {str(today)}.txt', lock=True)
         self.log_file = file.content('REPORT\\logs', 'log.txt', lock=True)
 
-    def done_hour(self):
-        print()
-        hour, minute, second = seconds_to_hms(self.continuous_time)
-        print(str(hour) + "時間：" + str(minute) + "分", str(second) + "秒")
-
+    def show_time(self, time):
+        hour, minute, second = seconds_to_hms(time)
+        return f'{str(hour)} 時間 {str(minute)} 分 {str(second)} 秒'
 
     def show_list(self):
         list_num = -1
@@ -191,14 +188,14 @@ class workSession:
         session_nunber = len(self.time_list) - len(self.time_started_list)-1
 
 
-        for time_code_start, time_code_end, goal_dict_num in zip(self.time_started_list, self.time_ended_list, self.finished_goals):
+        for time_code_start, time_code_end, goal_dict_num, goal_time in zip(self.time_started_list, self.time_ended_list, self.finished_goals, self.goal_time_list):
             session_nunber +=1
             goal_dict = self.finished_goals[goal_dict_num]
             what_to_write += f'\n{time_code_start} - {time_code_end}'
-            what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(self.time_list[session_nunber])}分'
-            what_to_write += "".join([f'\n{ikey}: {ivalue}' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
-            if self.add_point == 0:
-                what_to_write += ' *no point*'
+            what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(round(self.time_list[session_nunber], 2))}分\n'
+            what_to_write += "".join([f'<{ikey}: {ivalue}> ' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
+            what_to_write += f'\n'
+            what_to_write += "".join([f'{goal_index+1}. {goals[0]}-{round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time) if not goal_index == None])
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
         self.study_content_file.save(what_to_write, sameLN=True, lock=True)
 
@@ -380,121 +377,123 @@ class workSession:
 
         self.past_points -= minus_points
         self.manage_persistent_data.change_value({'current_points': self.past_points})
-    
-    def ui_screen(self, ui_type):
-        goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
+
+    def main_ui_screen(self, switch_ui, ui_time, encouragement, bonus_percentage): #main ui
         goal_keys_dict = {'correct': '1/end', 'incorrect': '2/↓', 'new': '3/PgDn', 'task': '4/←'}
-        match ui_type:
-            case 'session_ui':#main_ui
-                print(END)
-                progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
+        goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
+        progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
 
-                print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ', end='')
-                if self.swich_ui == 1:
-                    print('\033[33m' + '総勉強時間モード' + END)
-                else:
+        print(END)
+        print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ', end='')
+        if switch_ui == 1:
+            print('\033[33m' + '総勉強時間モード' + END)
+        else:
+            print()
+        if not self.goal == 0:
+            percentageStr = f'目標時間の{self.showPercentage}%が終了 ({bonus_percentage}倍ボーナス)\n{encouragement}'
+            prints.progress(int(progress))
+            print()
+            print('~~~~~~~')
+            print(percentageStr)
+            print('~~~~~~~')
+            print()
+            print()
+                            
+        for goal_var_name, goal_name in self.goal_name_dict.items():
+            if goal_name != None:
+                print(f'\033[32m{goal_name}{END}は"{goal_keys_dict[goal_var_name]}"', end='')
+                print(f' ({progressDict[goal_var_name]['current']}', end='')
+                print(f'/{progressDict[goal_var_name]['required']}', end='')
+                print(')')
+            
+        print()
+        print()
+        print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
+        print()
+        print()
+        print(ui_time)
+        print()
+        if not self.add_point == 0:
+            print(f'{((self.new_point + self.time_point) * self.DEVIDE_POINT_BY * 100)} points')
+        else:
+            print(f'{0} points')
+
+
+
+    def minimal_ui_screen(self, print_minimal_ui, session_time_finished):
+        goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
+        progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
+        if print_minimal_ui == True:
+            progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
+            subprocess.run("cls", shell=True)
+            print(END)
+            print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ')
+            if not self.goal == 0:
+                prints.progress(int(progress))
+            print()
+            print()
+            for goal_var_name, goal_name in self.goal_name_dict.items():#i have goal dict bc i fucked up the names
+                if goal_name != None:
+                    print(f'{goal_name}：{progressDict[goal_var_name]['current']}', end='')
+                    print(f'/{progressDict[goal_var_name]['required']}', end='')
                     print()
-                if not self.goal == 0:
-                    percentageStr = f'目標時間の{self.showPercentage}%が終了 ({self.bonusPointPercentage}倍ボーナス)\n{self.encouragementWord}'
-                    prints.progress(int(progress))
-                    print()
-                    print('~~~~~~~')
-                    print(percentageStr)
-                    print('~~~~~~~')
-                    print()
-                    print()
-                                    
-                for goal_var_name, goal_name in self.goal_name_dict.items():
-                    if goal_name != None:
-                        print(f'\033[32m{goal_name}{END}は"{goal_keys_dict[goal_var_name]}"', end='')
-                        print(f' ({progressDict[goal_var_name]['current']}', end='')
-                        print(f'/{progressDict[goal_var_name]['required']}', end='')
-                        print(')')
-                    
-                print()
-                print()
-                print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
-                print()
-                print()
-                if self.hour != 0:
-                    print(f'{self.hour} hr ', end='')
-                print(f'{self.minute} min {self.second} sec')
-                print()
-                if not self.add_point == 0:
-                    print(f'{((self.new_point + self.tim_point) * self.DEVIDE_POINT_BY * 100)} points')
-                else:
-                    print(f'{0} points')
 
-            case 'minimal_session_ui':
-                if self.print_minimal_ui == True:
-                    progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
-                    subprocess.run("cls", shell=True)
-                    print(END)
-                    print(f'{self.count}回目( {self.label}-{self.study_time}分 ) ')
-                    if not self.goal == 0:
-                        prints.progress(int(progress))
-                    print()
-                    print()
-                    for goal_var_name, goal_name in self.goal_name_dict.items():#i have goal dict bc i fucked up the names
-                        if goal_name != None:
-                            print(f'{goal_name}：{progressDict[goal_var_name]['current']}', end='')
-                            print(f'/{progressDict[goal_var_name]['required']}', end='')
-                            print()
+            print("\033[8m")
+            session_time_finished = False #i think this is so that it prints that session finished line
+            print_minimal_ui = False
+        return print_minimal_ui, session_time_finished #for session_time_finished
 
-                    print("\033[8m")
-                    self.print_minimal_ui = False
-                    self.session_time_finished = False
+    def ending_screen_ui(self):
+        print()
+        print(self.count,"回目")
+        print()
+        if self.current_points >= float(self.past_points):
+            print("今回のポイント：", self.current_points - float(self.past_points))
+        else:
+            print("今回のポイント： 0")
+        print(f'({self.pointString})')
+        print()
+        print("前回までのポイント：", self.past_points)
+        print()
+        if self.recess == None or self.recess == 0:
+            print("合計：", self.current_points, "points")
+        else:
+            print("合計", self.current_points + ((self.recess - self.recess) * self.REST_POINT_CONVERSION_RATE), "points")        
+        print()
 
-            case 'ending_screen_ui':
-                print()
-                print(self.count,"回目")
-                print()
-                if self.current_points >= float(self.past_points):
-                    print("今回のポイント：", self.current_points - float(self.past_points))
-                else:
-                    print("今回のポイント： 0")
-                print(f'({self.pointString})')
-                print()
-                print("前回までのポイント：", self.past_points)
-                print()
-                if self.recess == None or self.recess == 0:
-                    print("合計：", self.current_points, "points")
-                else:
-                    print("合計", self.current_points + ((self.recess - self.recess) * self.REST_POINT_CONVERSION_RATE), "points")        
-                print()
+        show_recess = float(self.recess)
+        if show_recess > 0 and self.recess == None:
+            print('休み:', show_recess, "min")
+        elif self.recess >= 0:
+            print('休み:', self.recess, "min")
+        elif self.recess <= 0:
+            print('休み:', 0, "min")
+        else:
+            print('休み: ' + RED + 'error' + END + ' min')   
+        print()
 
-                show_recess = float(self.recess)
-                if show_recess > 0 and self.recess == None:
-                    print('休み:', show_recess, "min")
-                elif self.recess >= 0:
-                    print('休み:', self.recess, "min")
-                elif self.recess <= 0:
-                    print('休み:', 0, "min")
-                else:
-                    print('休み: ' + RED + 'error' + END + ' min')   
-                print()
-
-            case 'finished_study_ui':
-                todayRaw = datetime.datetime.today()
-                todayShow = todayRaw.strftime('%Y年%#m月%#d')
-
-                print("\033[0m" + f'{todayShow}日の最終スコアは：')
-                self.done_hour()
-                print()
-                print()
-                print("ポイントの合計：", self.current_points)
-                print()
-                if self.pages_finished_full > 0:
-                    print("TASK：" + str(self.pages_finished_full))
-                if self.new_words_full > 0:
-                    print(f"NEW：" + str(self.new_words_full) + "個")
-                if self.correct_full > 0:
-                    print(f"RIGHT：" + str(self.correct_full) + "個")
-                if self.incorrect_full > 0:
-                    print(f"WRONG：" + str(self.incorrect_full) + "個")
-                print() 
-                print()
-                self.show_list()
+    def finished_study_ui(self):
+        todayRaw = datetime.datetime.today()
+        todayShow = todayRaw.strftime('%Y年%#m月%#d')
+        time_string = self.show_time(self.continuous_time)
+        print("\033[0m" + f'{todayShow}日の最終スコアは：')
+        print()
+        print(time_string)
+        print()
+        print()
+        print("ポイントの合計：", self.current_points)
+        print()
+        if self.pages_finished_full > 0:
+            print("TASK：" + str(self.pages_finished_full))
+        if self.new_words_full > 0:
+            print(f"NEW：" + str(self.new_words_full) + "個")
+        if self.correct_full > 0:
+            print(f"RIGHT：" + str(self.correct_full) + "個")
+        if self.incorrect_full > 0:
+            print(f"WRONG：" + str(self.incorrect_full) + "個")
+        print() 
+        print()
+        self.show_list()
 
     def cli_screen(self):
         temp_value = '$'
@@ -667,7 +666,9 @@ class workSession:
                     self.add_point = cli_output[command]
                     print_var.append(self.add_point)
                 case 'show_study_time':
-                    self.done_hour()
+                    time_string = self.show_time(self.continuous_time)
+                    print()
+                    print(time_string)
                 case 'show_study_list':
                     self.show_list()
                 case 'show_points':
@@ -747,15 +748,13 @@ class workSession:
         self.count = self.count + 1
         self.minute = 0
         self.hour = 0
-        self.tim_point = 0
+        self.time_point = 0
         self.goal_value_dict["task"] = 0
         self.goal_value_dict["correct"] = 0
         self.goal_value_dict["incorrect"] = 0
         self.goal_value_dict["new"] = 0
         self.past_correct_len = self.correct_full
-        self.session_time_finished = False
         self.the_time = 0
-        self.swich_ui = 0
         self.reset_time = time.time()
         self.cntnuos_rst = time.time()
         self.last_count = math.floor(((self.continuous_time + self.the_time) / 60) / 25) + 1
@@ -764,7 +763,6 @@ class workSession:
         self.time_started_list.append(return_time())
         #self.actual_study_time = 0
         self.new_point = 0
-        self.print_minimal_ui = True
         self.email_sent = False
         self.finished_content_list = []
         self.last_finished_content = None
@@ -775,9 +773,9 @@ class workSession:
         EMAIL_BODY = f'{self.label}の{self.study_time}分が終了しました\n勉強を終了してください'
         self.studyEndedEmail = sendEmail.EmailSender(EMAIL_LABEL, EMAIL_BODY)
 
-    def calculate_time_and_point(self):
+    def calculate_time_and_point(self, switch_ui):
         self.the_time = round(time.time()-self.reset_time)
-        if self.swich_ui == 1:
+        if switch_ui == 1:
             self.showTime = self.the_time + self.continuous_time
         else:
             self.showTime = self.the_time
@@ -785,6 +783,11 @@ class workSession:
         self.hour = math.floor(self.showTime / 3600)
         self.minute = math.floor((self.showTime - (self.hour * 3600)) / 60)
         self.second = self.showTime - (self.minute * 60) - (self.hour * 3600)
+
+        ui_time = ''
+        if self.hour != 0:
+            ui_time += f'{self.hour} hr '
+        ui_time += f'{self.minute} min {self.second} sec'
 
         #Changes were made so that even if unforseen elements cause the program to not calculate the amount, rebooting(?) the program will achive the same result as calculating it real-time
         if self.the_time > self.past_count:
@@ -796,29 +799,27 @@ class workSession:
 
                 self.new_point += (self.until_next_count * self.add_point / 1500) * ((math.ceil(self.past_count/1500) - 1) +  self.last_count)
                 self.until_next_count = 1500
-                self.past_count += 1500                
-        self.tim_point = (((time.time()- (self.reset_time + (self.past_count - self.until_next_count))) * self.add_point / 1500) * ((math.ceil(self.past_count/1500) - 1) +  self.last_count))
+                self.past_count += 1500
+        time_point = (((time.time()- (self.reset_time + (self.past_count - self.until_next_count))) * self.add_point / 1500) * ((math.ceil(self.past_count/1500) - 1) +  self.last_count))
         #(reset_time + (past_count - until_next_count)) is a variable which essentially resets the timer whenever the point added increases
         #((math.ceil(past_count/1500) - 1) +  last_count) is the past "count" variable, but calculated using math, rather than increassing the amount every time the point addded will increase
         
-        
-        self.totl_tim_point = self.new_point + self.tim_point
-        self.timePercentage = self.the_time/(self.study_time*60)
-        self.showPercentage = int(self.timePercentage * 100)
-        if self.timePercentage < .5:
-            self.bonusPointPercentage = 1.4
-            self.encouragementWord = 'まだまだ頑張れー(ง •̀_•́)ง'
-        elif self.timePercentage >= .5 and self.timePercentage < .8:
-            self.bonusPointPercentage = 3.2
-            self.encouragementWord = 'その調子‼(； ･`ω･´)'
-        elif self.timePercentage >= .8 and self.timePercentage < 1.3:
-            self.bonusPointPercentage = 4.8
-            self.encouragementWord = 'よくがんばったネ(๑˃̵ᴗ˂̵)و'
-        elif self.timePercentage >= 1.3:
-            self.bonusPointPercentage = 1
-            self.encouragementWord = 'もう終わったよ( ´･ω･`) '
+        self.totl_tim_point = self.new_point + time_point
+        timePercentage = self.the_time/(self.study_time*60)
+        self.showPercentage = int(timePercentage * 100)
 
-    def adjust_value(self): # this calculates the points and time you are able to study iguess
+        if timePercentage < .5:
+            done_percentage = 'not_done'
+        elif timePercentage >= .5 and timePercentage < .8:
+            done_percentage = 'almost_done'
+        elif timePercentage >= .8 and timePercentage < 1.3:
+            done_percentage = 'done'
+        elif timePercentage >= 1.3:
+            done_percentage = 'overtime'
+
+        return ui_time, time_point, done_percentage
+
+    def adjust_value(self, bonus_percentage): # this calculates the points and time you are able to study iguess
         CalTim = self.the_time / 60
         JustInTimeDiv = 1
 
@@ -839,11 +840,11 @@ class workSession:
             if JustInTimeDiv != 1:
                 self.pointString += f' multiplied by {JustInTimeDiv} because you went {JustInTimeStr}'
         elif self.progress == 100:
-            totl_tim_point_divided = original_time_point * self.bonusPointPercentage
-            if self.bonusPointPercentage == 1:
+            totl_tim_point_divided = original_time_point * bonus_percentage
+            if bonus_percentage == 1:
                 self.pointString += f', nothing else because you went over time'
             else:
-                self.pointString += f' multiplied by {self.bonusPointPercentage}'
+                self.pointString += f' multiplied by {bonus_percentage}'
         else:
             print()
             totl_tim_point_divided = original_time_point * (self.progress/100)
@@ -879,28 +880,42 @@ class workSession:
 
 
     def session(self):
+        BONUS_POINT_DICT = {'not_done': 1.4, 'almost_done': 3.2, 'done': 4.8, 'overtime': 1}
+        ENCOURAGEMENT_DICT = {'not_done': 'まだまだ頑張れー(ง •̀_•́)ง', 'almost_done': 'その調子‼(； ･`ω･´)', 'done': 'よくがんばったネ(๑˃̵ᴗ˂̵)و', 'overtime': 'もう終わったよ\\(ˆoˆ )/'}
+        switch_ui = 0
+        print_minimal_ui = True
+        session_time_finished = False
+        goal_time = []
+        goal_start_time = self.reset_time
+
         while True:
-            self.calculate_time_and_point()
+            ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui)
+            bonus_percentage = BONUS_POINT_DICT[done_percentage]
+            encouragement = ENCOURAGEMENT_DICT[done_percentage]
+            
+
 
             SWTMain = win32api.GetKeyState(0x67)
             if SWTMain < 0:
-                self.swich_ui = num.cap(self.swich_ui+1, 3)
-                self.print_minimal_ui = True
+                switch_ui = num.cap(switch_ui+1, 3)
+                print_minimal_ui = True
                 sleep(0.1)
 
-            if self.swich_ui == 2:
-                self.ui_screen('minimal_session_ui')
+            if switch_ui == 2:
+                print_minimal_ui = self.minimal_ui_screen(print_minimal_ui, session_time_finished)
             else:
-                self.print_minimal_ui = False
-                self.ui_screen('session_ui')
-                
+                print_minimal_ui = False
+                self.main_ui_screen(switch_ui, ui_time, encouragement, bonus_percentage)
+
             one_finish = win32api.GetKeyState(0x64)
             if self.goal_name_dict["task"] == None:
                 pass
             elif one_finish < 0:
                 self.goal_value_dict["task"] += goal_add_value(1, self.goal_name_dict["task"])
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.finished_content_list.append('task')
+                add_element, goal_start_time = add_goal_time(self.goal_name_dict["task"], goal_start_time)
+                goal_time.append(add_element)
                 keypres(1)
 
             right = win32api.GetKeyState(0x61)
@@ -908,8 +923,10 @@ class workSession:
                 pass
             elif right < 0:                            
                 self.goal_value_dict["correct"] += goal_add_value(1, self.goal_name_dict["correct"])
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.finished_content_list.append('correct')
+                add_element, goal_start_time = add_goal_time(self.goal_name_dict["correct"], goal_start_time)
+                goal_time.append(add_element)
                 keypres(1)
 
             wrong = win32api.GetKeyState(0x62)
@@ -917,8 +934,11 @@ class workSession:
                 pass
             elif wrong < 0:
                 self.goal_value_dict["incorrect"] += goal_add_value(1, self.goal_name_dict["incorrect"])
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.finished_content_list.append('incorrect')
+                add_element, goal_start_time = add_goal_time(self.goal_name_dict["incorrect"], goal_start_time)
+                goal_time.append(add_element)
+
                 keypres(1)
                     
             new = win32api.GetKeyState(0x63)
@@ -926,8 +946,10 @@ class workSession:
                 pass
             elif new < 0:
                 self.goal_value_dict["new"] += goal_add_value(1, self.goal_name_dict["new"])
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.finished_content_list.append('new')
+                add_element, goal_start_time = add_goal_time(self.goal_name_dict["new"], goal_start_time)
+                goal_time.append(add_element)
                 keypres(1)
 
             undo = win32api.GetKeyState(0x6E)
@@ -935,31 +957,32 @@ class workSession:
                 pass
             elif not len(self.finished_content_list) == 0:
                 self.last_finished_content = self.finished_content_list[len(self.finished_content_list)-1]
+                goal_time.pop(len(goal_time)-1)
                 print(f'-1 {self.last_finished_content}')
                 sleep(0.1)
             if self.last_finished_content == None:
                 pass
             elif self.last_finished_content == 'task':
                 self.goal_value_dict["task"] -= 1
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
 
             elif self.last_finished_content == 'correct':
                 self.goal_value_dict["correct"] -= 1
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
 
             elif self.last_finished_content == 'incorrect':
                 self.goal_value_dict["incorrect"] -= 1
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
                 
             elif self.last_finished_content == 'new':
                 self.goal_value_dict["new"] -= 1
-                self.print_minimal_ui = True
+                print_minimal_ui = True
                 self.last_finished_content = None
                 self.finished_content_list.pop(len(self.finished_content_list)-1)
 
@@ -974,17 +997,17 @@ class workSession:
                     self.studyEndedEmail.sendEmail()
                 except:
                     pass
-                self.print_minimal_ui = True
+                print_minimal_ui = True
 
-            elif self.session_time_finished == False:
+            elif session_time_finished == False:
                 if self.use_music == 1:
                     self.music.play()
                     self.use_music = 0
                 print(END)
                 print(str(self.study_time) + "分が経ちました" + "\033[8m")
-                self.session_time_finished = True
+                session_time_finished = True
             sleep(0.02)
-            if not self.swich_ui == 2:
+            if not switch_ui == 2:
                 subprocess.run("cls", shell=True)
 
             fin = win32api.GetKeyState(0x60)
@@ -1004,13 +1027,14 @@ class workSession:
 
                     elif finish == "-" or finish == "n":
                         sleep(0.1)
-                        if self.swich_ui == 2:
-                            self.print_minimal_ui = True
+                        if switch_ui == 2:
+                            print_minimal_ui = True
                         break
                     elif finish == '+' or finish == "y":
-                        self.calculate_time_and_point()
+                        ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui)
                         self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
-                        return True
+                        self.goal_time_list.append(goal_time)
+                        return bonus_percentage
                     else:
                         subprocess.run("cls", shell=True)
                         prints.err('input error')
@@ -1075,7 +1099,7 @@ class workSession:
             return 0
         self.actual_study_time = 0
         while True:
-            self.ui_screen('ending_screen_ui')
+            self.ending_screen_ui()
             true_rest_time = CheckAnswer("何分休みますか？")
 
             true_rest_time = ReturnRest(true_rest_time, self.recess)
@@ -1098,7 +1122,7 @@ class workSession:
         self.recess = recess
         self.manage_persistent_data.write_to_file()
         while True:
-            self.ui_screen('ending_screen_ui')
+            self.ending_screen_ui()
             print()
             print("続けますか？")
             end = input("[Enter / - (key)押す]")
@@ -1115,7 +1139,7 @@ class workSession:
         self.manage_persistent_data.write_to_file()
 
         while True:
-            self.ui_screen('finished_study_ui')
+            self.finished_study_ui()
             ok = input("\033[8m")
             subprocess.run("cls", shell=True)
 
@@ -1204,9 +1228,9 @@ if __name__ == '__main__':
     while True:
         session.initialize_session()
         sleep(0.45)
-        session.session()
+        bonus_percentage = session.session()
         session.wrap_up_session()
-        full_recess = session.adjust_value()
+        full_recess = session.adjust_value(bonus_percentage)
         recess = session.handle_rest_time(full_recess)
         session.rest_time_to_points(recess)
         subprocess.run("cls", shell=True)
