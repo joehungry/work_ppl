@@ -117,6 +117,7 @@ class workSession:
         self.REST_POINT_CONVERSION_RATE = 0.1
         self.MAX_DELETION_PERCENTAGE = 0.45
 
+        self.actual_study_time = 0
         self.rest_time_points = 0
         self.time_started_list = []
         self.time_ended_list = []
@@ -219,7 +220,7 @@ class workSession:
             what_to_write += f'{"-"*86}\n'
             what_to_write += f'{self.diary}\n\n'
             self.diary_file.save(what_to_write, lock=True)
-            self.comment_time == None    
+            self.comment_time = None    
             
     def write_log_files(self):   
         save_string = ''         
@@ -522,6 +523,7 @@ class workSession:
                 case 'label_base':
                     self.label_base = cli_output[command]
                     print_var.append(self.label_base)
+                    self.manage_persistent_data.change_value({'label_base': self.label_base})
                 case 'string_to_add_label':
                     if not self.label_base == None:
                         self.label = f'{self.label_base}{cli_output[command]}'
@@ -760,7 +762,7 @@ class workSession:
         self.until_next_count = 1500 - (self.continuous_time - 1500 *(math.floor(self.continuous_time / 1500)))
         self.past_count = self.until_next_count
         self.time_started_list.append(return_time())
-        self.actual_study_time = 0
+        #self.actual_study_time = 0
         self.new_point = 0
         self.print_minimal_ui = True
         self.email_sent = False
@@ -1036,7 +1038,7 @@ class workSession:
         if self.is_using_music == True:
             self.music.stop()
         self.past_incorrect_len = self.incorrect_full
-        self.actual_study_time = self.the_time #why does this need to do this 
+        self.actual_study_time += self.the_time #why does this need to do this 
         if not self.add_point == 0:
             self.continuous_time += self.the_time
             self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'last_study_time': self.study_time, 'past_goal': self.past_goal})
@@ -1071,6 +1073,7 @@ class workSession:
         self.manage_persistent_data.change_value({'current_points': self.current_points})
         if self.recess <= 0:
             return 0
+        self.actual_study_time = 0
         while True:
             self.ui_screen('ending_screen_ui')
             true_rest_time = CheckAnswer("何分休みますか？")
