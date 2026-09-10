@@ -22,7 +22,7 @@ def goal_add_value(amount, goal_name):
 
 def add_goal_time(goal_name, goal_start_time):
     new_goal_start_time = time.time()
-    return [goal_name, new_goal_start_time-goal_start_time], new_goal_start_time
+    return [goal_name, (new_goal_start_time-goal_start_time)/60], new_goal_start_time
 
         
 
@@ -195,7 +195,7 @@ class workSession:
             what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(round(self.time_list[session_nunber], 2))}分\n'
             what_to_write += "".join([f'<{ikey}: {ivalue}> ' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
             what_to_write += f'\n'
-            what_to_write += "".join([f'{goal_index+1}. {goals[0]}-{round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time) if not goal_index == None])
+            what_to_write += "".join([f'{goal_index+1}.{goals[0]} - {round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time) if not goal_index == None])
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
         self.study_content_file.save(what_to_write, sameLN=True, lock=True)
 
