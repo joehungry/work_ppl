@@ -1,9 +1,4 @@
-try:
-    from funcs import breakup
-    from funcs import splice
-except:
-    import breakup
-    import splice
+from funcs import splice
 
 def cap(num, cap):
     capNum = num - (((cap) * int(num / cap)))

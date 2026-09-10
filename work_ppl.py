@@ -22,7 +22,7 @@ def goal_add_value(amount, goal_name):
 
 def add_goal_time(goal_name, goal_start_time):
     new_goal_start_time = time.time()
-    return [goal_name, (new_goal_start_time-goal_start_time)/60], new_goal_start_time
+    return [goal_name, (new_goal_start_time-goal_start_time)/60, goal_start_time], new_goal_start_time
 
         
 
@@ -124,7 +124,6 @@ class workSession:
 
         self.actual_study_time = 0
         self.rest_time_points = 0
-        self.time_started_list = []
         self.time_ended_list = []
 
         self.DEVIDE_POINT_BY = 0.7
@@ -181,14 +180,14 @@ class workSession:
             return (self.actual_study_time / 60) * 0.2
         return recess
 
-    def write_study_content_file(self):
+    def write_study_content_file(self, time_started_list):
         what_to_write = f'\n{"_" * 39}'
         #list num is looking at time list which has all the times i have logged how long i have studied for, 
         # and subtracting the length of how much i have logged my progress after i started the program
-        session_nunber = len(self.time_list) - len(self.time_started_list)-1
+        session_nunber = len(self.time_list) - len(time_started_list)-1
 
 
-        for time_code_start, time_code_end, goal_dict_num, goal_time in zip(self.time_started_list, self.time_ended_list, self.finished_goals, self.goal_time_list):
+        for time_code_start, time_code_end, goal_dict_num, goal_time in zip(time_started_list, self.time_ended_list, self.finished_goals, self.goal_time_list):
             session_nunber +=1
             goal_dict = self.finished_goals[goal_dict_num]
             what_to_write += f'\n{time_code_start} - {time_code_end}'
@@ -323,7 +322,6 @@ class workSession:
         self.count_one = len(self.time_list)
         #the same thing in time list
         self.pages_finished_first = self.pages_finished_full
-        self.past_correct_len = self.correct_full
         self.past_incorrect_len = self.incorrect_full
         self.continuous_time_at_start = self.continuous_time
         self.last_session_at_start = self.past_points
@@ -364,7 +362,7 @@ class workSession:
         self.point_detail_file.save(what_to_write, lock=True, sameLN=True)
     
 
-    def rest(self, time_of_rest):
+    def rest(self, time_of_rest, time_started_list):
         self.manage_persistent_data.change_value({'recess_now': 0})
         self.manage_persistent_data.write_to_file()
         rest_session = work_ppl_rest.main_rest_class()
@@ -372,7 +370,7 @@ class workSession:
         rest_session.get_values(time_of_rest, self.rest_time_points, self.REST_POINT_CONVERSION_RATE, self.email_on, self.MAX_DELETION_PERCENTAGE, self.past_points, self.music_content, self.music_on)
         minus_points = rest_session.rest_func()
         if minus_points == 'crash':
-            self.write_study_content_file()
+            self.write_study_content_file(time_started_list)
             self.manage_persistent_data.change_value({'current_points': self.past_points*self.MAX_DELETION_PERCENTAGE})
             self.manage_persistent_data.write_to_file()
             exit()
@@ -747,50 +745,38 @@ class workSession:
 
     def initialize_session(self):
         self.count = self.count + 1
-        self.minute = 0
-        self.hour = 0
         self.time_point = 0
         self.goal_value_dict["task"] = 0
         self.goal_value_dict["correct"] = 0
         self.goal_value_dict["incorrect"] = 0
         self.goal_value_dict["new"] = 0
-        self.past_correct_len = self.correct_full
         self.the_time = 0
-        self.reset_time = time.time()
-        self.cntnuos_rst = time.time()
         self.last_count = math.floor(((self.continuous_time + self.the_time) / 60) / 25) + 1
         self.until_next_count = 1500 - (self.continuous_time - 1500 *(math.floor(self.continuous_time / 1500)))
         self.past_count = self.until_next_count
-        self.time_started_list.append(return_time())
-        #self.actual_study_time = 0
         self.new_point = 0
-        self.email_sent = False
-        self.finished_content_list = []
-        self.last_finished_content = None
         
-        self.use_music, self.is_using_music, self.music = self.music_content.set_song('choose_music_study', self.music_on)
-
         EMAIL_LABEL = '【WORKPPL】STUDY TIME HAS ENDED NOTIFICATION'
         EMAIL_BODY = f'{self.label}の{self.study_time}分が終了しました\n勉強を終了してください'
         self.studyEndedEmail = sendEmail.EmailSender(EMAIL_LABEL, EMAIL_BODY)
 
-    def calculate_time_and_point(self, switch_ui):
-        self.the_time = round(time.time()-self.reset_time)
+    def calculate_time_and_point(self, switch_ui, reset_time):
+        self.the_time = round(time.time()-reset_time)
         if switch_ui == 1:
             self.showTime = self.the_time + self.continuous_time
         else:
             self.showTime = self.the_time
 
-        self.hour = math.floor(self.showTime / 3600)
-        self.minute = math.floor((self.showTime - (self.hour * 3600)) / 60)
-        self.second = self.showTime - (self.minute * 60) - (self.hour * 3600)
+        hour = math.floor(self.showTime / 3600)
+        minute = math.floor((self.showTime - (hour * 3600)) / 60)
+        second = self.showTime - (minute * 60) - (hour * 3600)
 
         ui_time = ''
-        if self.hour != 0:
-            ui_time += f'{self.hour} hr '
-        ui_time += f'{self.minute} min {self.second} sec'
+        if hour != 0:
+            ui_time += f'{hour} hr '
+        ui_time += f'{minute} min {second} sec'
 
-        #Changes were made so that even if unforseen elements cause the program to not calculate the amount, rebooting(?) the program will achive the same result as calculating it real-time
+        #Changes were made so that even if unforsee^n elements cause the program to not calculate the amount, rebooting(?) the program will achive the same result as calculating it real-time
         if self.the_time > self.past_count:
             self.the_countdown_time = self.the_time
             
@@ -801,7 +787,7 @@ class workSession:
                 self.new_point += (self.until_next_count * self.add_point / 1500) * ((math.ceil(self.past_count/1500) - 1) +  self.last_count)
                 self.until_next_count = 1500
                 self.past_count += 1500
-        time_point = (((time.time()- (self.reset_time + (self.past_count - self.until_next_count))) * self.add_point / 1500) * ((math.ceil(self.past_count/1500) - 1) +  self.last_count))
+        time_point = (((time.time()- (reset_time + (self.past_count - self.until_next_count))) * self.add_point / 1500) * ((math.ceil(self.past_count/1500) - 1) +  self.last_count))
         #(reset_time + (past_count - until_next_count)) is a variable which essentially resets the timer whenever the point added increases
         #((math.ceil(past_count/1500) - 1) +  last_count) is the past "count" variable, but calculated using math, rather than increassing the amount every time the point addded will increase
         
@@ -887,10 +873,19 @@ class workSession:
         print_minimal_ui = True
         session_time_finished = False
         goal_time = []
-        goal_start_time = self.reset_time
+        reset_time = time.time()
+        goal_start_time = reset_time
+
+        email_sent = False
+
+        last_finished_content = None
+        finished_content_list = []
+
+        use_music, is_using_music, music = self.music_content.set_song('choose_music_study', self.music_on)
+
 
         while True:
-            ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui)
+            ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui, reset_time)
             bonus_percentage = BONUS_POINT_DICT[done_percentage]
             encouragement = ENCOURAGEMENT_DICT[done_percentage]
             
@@ -914,7 +909,7 @@ class workSession:
             elif one_finish < 0:
                 self.goal_value_dict["task"] += goal_add_value(1, self.goal_name_dict["task"])
                 print_minimal_ui = True
-                self.finished_content_list.append('task')
+                finished_content_list.append('task')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["task"], goal_start_time)
                 goal_time.append(add_element)
                 keypres(1)
@@ -925,7 +920,7 @@ class workSession:
             elif right < 0:                            
                 self.goal_value_dict["correct"] += goal_add_value(1, self.goal_name_dict["correct"])
                 print_minimal_ui = True
-                self.finished_content_list.append('correct')
+                finished_content_list.append('correct')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["correct"], goal_start_time)
                 goal_time.append(add_element)
                 keypres(1)
@@ -936,7 +931,7 @@ class workSession:
             elif wrong < 0:
                 self.goal_value_dict["incorrect"] += goal_add_value(1, self.goal_name_dict["incorrect"])
                 print_minimal_ui = True
-                self.finished_content_list.append('incorrect')
+                finished_content_list.append('incorrect')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["incorrect"], goal_start_time)
                 goal_time.append(add_element)
 
@@ -948,7 +943,7 @@ class workSession:
             elif new < 0:
                 self.goal_value_dict["new"] += goal_add_value(1, self.goal_name_dict["new"])
                 print_minimal_ui = True
-                self.finished_content_list.append('new')
+                finished_content_list.append('new')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["new"], goal_start_time)
                 goal_time.append(add_element)
                 keypres(1)
@@ -956,45 +951,45 @@ class workSession:
             undo = win32api.GetKeyState(0x6E)
             if undo >= 0:
                 pass
-            elif not len(self.finished_content_list) == 0:
-                self.last_finished_content = self.finished_content_list[len(self.finished_content_list)-1]
-                goal_start_time = goal_time[len(goal_time)-1][1]
+            elif not len(finished_content_list) == 0:
+                last_finished_content = finished_content_list[len(finished_content_list)-1]
+                goal_start_time = goal_time[len(goal_time)-1][2]
                 goal_time.pop(len(goal_time)-1)
-                print(f'-1 {self.last_finished_content}')
+                print(f'-1 {last_finished_content}')
                 sleep(0.1)
-            if self.last_finished_content == None:
+            if last_finished_content == None:
                 pass
-            elif self.last_finished_content == 'task':
+            elif last_finished_content == 'task':
                 self.goal_value_dict["task"] -= 1
                 print_minimal_ui = True
-                self.last_finished_content = None
-                self.finished_content_list.pop(len(self.finished_content_list)-1)
+                last_finished_content = None
+                finished_content_list.pop(len(finished_content_list)-1)
 
-            elif self.last_finished_content == 'correct':
+            elif last_finished_content == 'correct':
                 self.goal_value_dict["correct"] -= 1
                 print_minimal_ui = True
-                self.last_finished_content = None
-                self.finished_content_list.pop(len(self.finished_content_list)-1)
+                last_finished_content = None
+                finished_content_list.pop(len(finished_content_list)-1)
 
-            elif self.last_finished_content == 'incorrect':
+            elif last_finished_content == 'incorrect':
                 self.goal_value_dict["incorrect"] -= 1
                 print_minimal_ui = True
-                self.last_finished_content = None
-                self.finished_content_list.pop(len(self.finished_content_list)-1)
+                last_finished_content = None
+                finished_content_list.pop(len(finished_content_list)-1)
                 
-            elif self.last_finished_content == 'new':
+            elif last_finished_content == 'new':
                 self.goal_value_dict["new"] -= 1
                 print_minimal_ui = True
-                self.last_finished_content = None
-                self.finished_content_list.pop(len(self.finished_content_list)-1)
+                last_finished_content = None
+                finished_content_list.pop(len(finished_content_list)-1)
 
 
-            #if not self.last_finished_content == None:
+            #if not last_finished_content == None:
 
             if self.the_time / 60  < self.study_time: #Ln257
                 pass
-            elif self.email_on == True and self.email_sent == False:
-                self.email_sent = True
+            elif self.email_on == True and email_sent == False:
+                email_sent = True
                 try:
                     self.studyEndedEmail.sendEmail()
                 except:
@@ -1002,9 +997,9 @@ class workSession:
                 print_minimal_ui = True
 
             elif session_time_finished == False:
-                if self.use_music == 1:
-                    self.music.play()
-                    self.use_music = 0
+                if use_music == 1:
+                    music.play()
+                    use_music = 0
                 print(END)
                 print(str(self.study_time) + "分が経ちました" + "\033[8m")
                 session_time_finished = True
@@ -1033,10 +1028,12 @@ class workSession:
                             print_minimal_ui = True
                         break
                     elif finish == '+' or finish == "y":
-                        ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui)
+                        ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui, reset_time)
                         bonus_percentage = BONUS_POINT_DICT[done_percentage]
                         self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
                         self.goal_time_list.append(goal_time)
+                        if is_using_music == True:
+                            music.stop()
                         return bonus_percentage
                     else:
                         subprocess.run("cls", shell=True)
@@ -1062,8 +1059,6 @@ class workSession:
             self.past_goal = self.temp_past_goal
         self.temp_past_goal = None
 
-        if self.is_using_music == True:
-            self.music.stop()
         self.past_incorrect_len = self.incorrect_full
         self.actual_study_time += self.the_time #why does this need to do this 
         if not self.add_point == 0:
@@ -1135,9 +1130,9 @@ class workSession:
                 self.past_points = self.current_points
                 return True
 
-    def finish_program(self):
+    def finish_program(self, time_started_list):
         self.write_diary_file()
-        self.write_study_content_file()
+        self.write_study_content_file(time_started_list)
         self.write_point_detail_file()
         self.manage_persistent_data.write_to_file()
 
@@ -1193,6 +1188,7 @@ if __name__ == '__main__':
     prints.loading(load_num)
 
     session = workSession()
+    time_started_list = []
     load_num += 1
     prints.loading(load_num)
 
@@ -1219,16 +1215,17 @@ if __name__ == '__main__':
         if start_session == True:
             break
         elif start_session == False:
-            session.finish_program()
+            session.finish_program(time_started_list)
         if start_session == 2:
             start_first_rest = True
 
     if start_first_rest == True:
-        session.rest(first_rest)
+        session.rest(first_rest, time_started_list)
         session.rest_time_to_points(first_rest)
 
     subprocess.run("cls", shell=True)
     while True:
+        time_started_list.append(return_time())
         session.initialize_session()
         sleep(0.45)
         bonus_percentage = session.session()
@@ -1240,7 +1237,7 @@ if __name__ == '__main__':
         continue_session = session.chceck_if_continue(recess)
         subprocess.run("cls", shell=True)
         if continue_session == False:
-            session.finish_program()
+            session.finish_program(time_started_list)
         subprocess.run("cls", shell=True)
         print('始めます [Enter]')
         while True:
@@ -1249,7 +1246,7 @@ if __name__ == '__main__':
             if start_session == True:
                 break
             elif start_session == False:
-                session.finish_program()
+                session.finish_program(time_started_list)
         if recess > 0:
             sleep(0.3)
-            session.rest(recess)
+            session.rest(recess, time_started_list)

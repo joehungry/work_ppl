@@ -52,3 +52,4 @@ if __name__ == '__main__':
     body = 'This is a test email sent from Python.'
     fuck = EmailSender(subject, body)
     fuck.sendEmail()
+    
