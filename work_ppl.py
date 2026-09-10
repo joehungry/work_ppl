@@ -195,7 +195,7 @@ class workSession:
             what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(round(self.time_list[session_nunber], 2))}分\n'
             what_to_write += "".join([f'<{ikey}: {ivalue}> ' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
             what_to_write += f'\n'
-            what_to_write += "".join([f'{goal_index+1}.{goals[0]} - {round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time) if not goal_index == None])
+            what_to_write += "".join([f'{goal_index+1}.{goals[0]} - {round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time)])
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
         self.study_content_file.save(what_to_write, sameLN=True, lock=True)
 
@@ -422,7 +422,6 @@ class workSession:
 
     def minimal_ui_screen(self, print_minimal_ui, session_time_finished):
         goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
-        progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
         if print_minimal_ui == True:
             progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
             subprocess.run("cls", shell=True)
@@ -902,7 +901,7 @@ class workSession:
                 sleep(0.1)
 
             if switch_ui == 2:
-                print_minimal_ui = self.minimal_ui_screen(print_minimal_ui, session_time_finished)
+                print_minimal_ui, session_time_finished = self.minimal_ui_screen(print_minimal_ui, session_time_finished)
             else:
                 print_minimal_ui = False
                 self.main_ui_screen(switch_ui, ui_time, encouragement, bonus_percentage)
@@ -957,6 +956,7 @@ class workSession:
                 pass
             elif not len(self.finished_content_list) == 0:
                 self.last_finished_content = self.finished_content_list[len(self.finished_content_list)-1]
+                goal_start_time = goal_time[len(goal_time)-1][1]
                 goal_time.pop(len(goal_time)-1)
                 print(f'-1 {self.last_finished_content}')
                 sleep(0.1)
@@ -1032,6 +1032,7 @@ class workSession:
                         break
                     elif finish == '+' or finish == "y":
                         ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui)
+                        bonus_percentage = BONUS_POINT_DICT[done_percentage]
                         self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
                         self.goal_time_list.append(goal_time)
                         return bonus_percentage
