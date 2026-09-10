@@ -196,6 +196,8 @@ class workSession:
             what_to_write += "".join([f'<{ikey}: {ivalue}> ' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
             what_to_write += f'\n'
             what_to_write += "".join([f'{goal_index+1}.{goals[0]} - {round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time)])
+            if self.add_point == 0:
+                what_to_write += ' *no point*'
         what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
         self.study_content_file.save(what_to_write, sameLN=True, lock=True)
 
