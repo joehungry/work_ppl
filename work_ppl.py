@@ -124,7 +124,6 @@ class workSession:
 
         self.filetype = None
         self.user_made_file_content = None
-        self.past_goal_name_dict = {}
 
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
 
@@ -142,7 +141,6 @@ class workSession:
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\settings.txt'])
         self.manage_goal_dict = data.manage(self.goal_name_dict, past_goal_file)
-        self.past_goal_name_dict = self.manage_goal_dict.extract_from_file()
 
         file.content(f'REPORT\\music')
         self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt', lock=True)
@@ -190,7 +188,7 @@ class workSession:
             what_to_write += "".join([f'{goal_index+1}.{goals[0]} - {round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time)])
             if self.add_point == 0:
                 what_to_write += ' *no point*'
-        what_to_write += f'\n\nended program:{str(return_time())}\n{"-"*39}'
+        what_to_write += f'\nended program:{str(return_time())}\n{"-"*39}'
         self.study_content_file.save(what_to_write, sameLN=True, lock=True)
 
     def write_point_detail_file(self):
@@ -280,6 +278,10 @@ class workSession:
 
         self.user_made_dir = extracted_dict['filedir']
         self.user_made_file = extracted_dict['filename']
+
+        if isToday == True:
+            goal_values = self.manage_goal_dict.extract_from_file()
+            self.manage_goal_dict.change_value(goal_values)
 
         self.label_list = []
         self.time_list = []
@@ -473,11 +475,11 @@ class workSession:
         if self.pages_finished_full > 0:
             print("TASK：" + str(self.pages_finished_full))
         if self.new_words_full > 0:
-            print(f"NEW：" + str(self.new_words_full) + "個")
+            print(f"NEW：" + str(self.new_words_full))
         if self.correct_full > 0:
-            print(f"RIGHT：" + str(self.correct_full) + "個")
+            print(f"RIGHT：" + str(self.correct_full))
         if self.incorrect_full > 0:
-            print(f"WRONG：" + str(self.incorrect_full) + "個")
+            print(f"WRONG：" + str(self.incorrect_full))
         print() 
         print()
         self.show_list()
@@ -711,7 +713,7 @@ class workSession:
                         prints.err(f'goalError: independently select elements for mixed commands')
                     else:
                         if same == True:
-                            self.goal_name_dict[goal_to_change], print_var, error = check_same_command(self.past_goal_name_dict[goal_to_change], print_var, 'past goal does not exist')
+                            self.goal_name_dict[goal_to_change], print_var, error = check_same_command(self.manage_goal_dict.extract_value(goal_to_change), print_var, 'past goal does not exist')
                             goal_name = self.goal_name_dict[goal_to_change]
                         else:
                             self.goal_name_dict[goal_to_change] = goal_name
@@ -1028,7 +1030,6 @@ class workSession:
                         for ilen, iitems in enumerate(self.goal_name_dict.items()):
                             if iitems[1] != None:
                                 self.finished_goals[end_time][f'{ilen}{iitems[1]}'] = goal_value_dict[iitems[0]]
-                        self.past_goal_name_dict = self.goal_name_dict
 
                         self.pages_finished_full += goal_value_dict["task"]
                         self.new_words_full += goal_value_dict["new"]

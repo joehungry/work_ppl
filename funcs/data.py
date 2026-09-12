@@ -37,14 +37,19 @@ class manage:
                 return_dict[key] = self.data_dictionary[key]
         return return_dict
 
+    def extract_value(self, key):
+        return self.data_dictionary[key]
+
     def print(self):
         print(self.data_dictionary)
 
 if __name__ == '__main__':
-    test_dict = {1:10, 3:10, 4:10, 5:10}
+    test_dict = {'1':'10', '3':'30', '4':'40', '5':'50'}
     test_file = file.content('', 'test.txt')
     test = manage(test_dict, test_file)
     print(test.extract_from_file())
+    print(test.extract_value('4'))
+    test.change_value({'3':'shit'})
+    print(test.extract_value('3'))
 
-    #test.write_to_file()
     print(test.extract_from_file())
