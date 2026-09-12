@@ -24,8 +24,6 @@ def add_goal_time(goal_name, goal_start_time):
     new_goal_start_time = time.time()
     return [goal_name, (new_goal_start_time-goal_start_time)/60, goal_start_time], new_goal_start_time
 
-        
-
 #質問をし答えをVariableに記録します
 def CheckAnswer(question):
     print()
@@ -114,6 +112,7 @@ class workSession:
 
         self.goal = None
         self.temp_past_goal = None
+        self.change_goal_value = {}
         self.add_point = 1
 
         self.start_session = None
@@ -133,7 +132,6 @@ class workSession:
         self.past_goal_name_dict = {}
 
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
-        self.goal_value_dict = {"task": 0, "new": 0, "correct": 0, "incorrect": 0}
 
         self.finished_goals = {}
         self.goal_time_list = []
@@ -192,7 +190,7 @@ class workSession:
             goal_dict = self.finished_goals[goal_dict_num]
             what_to_write += f'\n{time_code_start} - {time_code_end}'
             what_to_write += f'\n{str(int(session_nunber +1))}回目 「{str(self.label_list[session_nunber])}」　ー　{str(round(self.time_list[session_nunber], 2))}分\n'
-            what_to_write += "".join([f'<{ikey}: {ivalue}> ' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!!
+            what_to_write += "".join([f'<{ikey[1:]}: {ivalue}> ' for ikey, ivalue in goal_dict.items() if not ikey == None]) #bro, so elegant!! ikey[1:] so that it removes the number that differentiates between same names
             what_to_write += f'\n'
             what_to_write += "".join([f'{goal_index+1}.{goals[0]} - {round(goals[1], 2)}分\n' for goal_index, goals in enumerate(goal_time)])
             if self.add_point == 0:
@@ -220,15 +218,13 @@ class workSession:
             self.diary_file.save(what_to_write, lock=True)
             self.comment_time = None    
             
-    def write_log_files(self):   
-        save_string = ''         
+    def write_log_files(self):
+        save_string = ''
         if not len(self.log_file.fetch()) == 0:
             save_string += f'\n'
         if not len(self.time_list) == 0:
             save_string += f'{self.time_list[len(self.time_list)-1]}:{self.label_list[len(self.label_list)-1]}'
             self.log_file.save(save_string, sameLN=True, lock=True)
-            
-
 
     def extract_data_from_file(self):
         extracted_dict = self.manage_persistent_data.extract_from_file()
@@ -291,7 +287,6 @@ class workSession:
         self.user_made_dir = extracted_dict['filedir']
         self.user_made_file = extracted_dict['filename']
 
-        
         self.label_list = []
         self.time_list = []
         self.past_label = None
@@ -306,7 +301,7 @@ class workSession:
             last_entry_log_file = past_log_file[len(past_log_file)-1]
             temp, self.past_label = splice.splice(last_entry_log_file, ':', 'str')
             self.delete_log_file = True
-        
+
         #?what is the point of this???
         #self.log_file.save('', sameLN=True)
         if log_file_list == None:
@@ -315,14 +310,13 @@ class workSession:
             study_time, label = splice.splice(i, ':', 'str')
             self.label_list.append(label)
             self.time_list.append(float(study_time))
-        
+
         if not log_file_list == []:
             self.past_label = self.label_list[len(self.label_list)-1]
-        
+
         self.count_one = len(self.time_list)
         #the same thing in time list
         self.pages_finished_first = self.pages_finished_full
-        self.past_incorrect_len = self.incorrect_full
         self.continuous_time_at_start = self.continuous_time
         self.last_session_at_start = self.past_points
         self.count = self.count_one
@@ -360,7 +354,7 @@ class workSession:
             what_to_write += f'\n\n\n'
         what_to_write += f'{"_" * 82}\n\nstarted : {started_time}'
         self.point_detail_file.save(what_to_write, lock=True, sameLN=True)
-    
+
 
     def rest(self, time_of_rest, time_started_list):
         self.manage_persistent_data.change_value({'recess_now': 0})
@@ -378,9 +372,9 @@ class workSession:
         self.past_points -= minus_points
         self.manage_persistent_data.change_value({'current_points': self.past_points})
 
-    def main_ui_screen(self, switch_ui, ui_time, encouragement, bonus_percentage): #main ui
+    def main_ui_screen(self, switch_ui, ui_time, encouragement, bonus_percentage, goal_dict): #main ui
         goal_keys_dict = {'correct': '1/end', 'incorrect': '2/↓', 'new': '3/PgDn', 'task': '4/←'}
-        goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
+        #goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
         progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
 
         print(END)
@@ -398,14 +392,14 @@ class workSession:
             print('~~~~~~~')
             print()
             print()
-                            
+
         for goal_var_name, goal_name in self.goal_name_dict.items():
             if goal_name != None:
                 print(f'\033[32m{goal_name}{END}は"{goal_keys_dict[goal_var_name]}"', end='')
                 print(f' ({progressDict[goal_var_name]['current']}', end='')
                 print(f'/{progressDict[goal_var_name]['required']}', end='')
                 print(')')
-            
+
         print()
         print()
         print('勉強が終わったら "' + '\033[1m' + '0/Ins' + END + '"キー')
@@ -420,8 +414,8 @@ class workSession:
 
 
 
-    def minimal_ui_screen(self, print_minimal_ui, session_time_finished):
-        goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
+    def minimal_ui_screen(self, print_minimal_ui, session_time_finished, goal_dict):
+        #goal_dict = {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]} #this is here because it doesn't work if i directly put it in the variable wtf why
         if print_minimal_ui == True:
             progress, progressDict = goalProgress.get_goal_progress(self.goal, goal_dict)
             subprocess.run("cls", shell=True)
@@ -660,6 +654,8 @@ class workSession:
                         prints.err('choose name for incorrect_full')
                     elif ready_to_start == True:
                         self.manage_settings_data.write_to_file()
+                        self.manage_goal_dict.change_value(self.change_goal_value)
+                        self.change_goal_value = {}
                         return True
                 case 'points':
                     self.add_point = cli_output[command]
@@ -735,7 +731,7 @@ class workSession:
                             prints.err(f'goalError: "{goal_to_change}" has not been selected for session')
                             return None
                         else:
-                            self.manage_goal_dict.change_value({goal_to_change: goal_name})
+                            self.change_goal_value[goal_to_change] = goal_name
                             print_var.append(goal_name)
                     print(self.goal_name_dict)
 
@@ -746,10 +742,6 @@ class workSession:
     def initialize_session(self):
         self.count = self.count + 1
         self.time_point = 0
-        self.goal_value_dict["task"] = 0
-        self.goal_value_dict["correct"] = 0
-        self.goal_value_dict["incorrect"] = 0
-        self.goal_value_dict["new"] = 0
         self.the_time = 0
         self.last_count = math.floor(((self.continuous_time + self.the_time) / 60) / 25) + 1
         self.until_next_count = 1500 - (self.continuous_time - 1500 *(math.floor(self.continuous_time / 1500)))
@@ -792,7 +784,7 @@ class workSession:
         #((math.ceil(past_count/1500) - 1) +  last_count) is the past "count" variable, but calculated using math, rather than increassing the amount every time the point addded will increase
         
         self.totl_tim_point = self.new_point + time_point
-        timePercentage = self.the_time/(self.study_time*60)
+        timePercentage = self.the_time/(self.study_time * 60)
         self.showPercentage = int(timePercentage * 100)
 
         if timePercentage < .5:
@@ -878,6 +870,8 @@ class workSession:
 
         email_sent = False
 
+        goal_value_dict = {"task": 0, "new": 0, "correct": 0, "incorrect": 0}
+
         last_finished_content = None
         finished_content_list = []
 
@@ -898,16 +892,18 @@ class workSession:
                 sleep(0.1)
 
             if switch_ui == 2:
-                print_minimal_ui, session_time_finished = self.minimal_ui_screen(print_minimal_ui, session_time_finished)
+                print_minimal_ui, session_time_finished = self.minimal_ui_screen(print_minimal_ui, session_time_finished, goal_value_dict)
             else:
                 print_minimal_ui = False
-                self.main_ui_screen(switch_ui, ui_time, encouragement, bonus_percentage)
+                self.main_ui_screen(switch_ui, ui_time, encouragement, bonus_percentage, goal_value_dict)
 
             one_finish = win32api.GetKeyState(0x64)
-            if self.goal_name_dict["task"] == None:
+            if one_finish >= 0:
+                pass
+            elif self.goal_name_dict["task"] == None:
                 pass
             elif one_finish < 0:
-                self.goal_value_dict["task"] += goal_add_value(1, self.goal_name_dict["task"])
+                goal_value_dict["task"] += goal_add_value(1, self.goal_name_dict["task"])
                 print_minimal_ui = True
                 finished_content_list.append('task')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["task"], goal_start_time)
@@ -917,8 +913,8 @@ class workSession:
             right = win32api.GetKeyState(0x61)
             if self.goal_name_dict["correct"] == None:
                 pass
-            elif right < 0:                            
-                self.goal_value_dict["correct"] += goal_add_value(1, self.goal_name_dict["correct"])
+            elif right < 0:
+                goal_value_dict["correct"] += goal_add_value(1, self.goal_name_dict["correct"])
                 print_minimal_ui = True
                 finished_content_list.append('correct')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["correct"], goal_start_time)
@@ -929,7 +925,7 @@ class workSession:
             if self.goal_name_dict["incorrect"] == None:
                 pass
             elif wrong < 0:
-                self.goal_value_dict["incorrect"] += goal_add_value(1, self.goal_name_dict["incorrect"])
+                goal_value_dict["incorrect"] += goal_add_value(1, self.goal_name_dict["incorrect"])
                 print_minimal_ui = True
                 finished_content_list.append('incorrect')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["incorrect"], goal_start_time)
@@ -941,7 +937,7 @@ class workSession:
             if self.goal_name_dict["new"] == None:
                 pass
             elif new < 0:
-                self.goal_value_dict["new"] += goal_add_value(1, self.goal_name_dict["new"])
+                goal_value_dict["new"] += goal_add_value(1, self.goal_name_dict["new"])
                 print_minimal_ui = True
                 finished_content_list.append('new')
                 add_element, goal_start_time = add_goal_time(self.goal_name_dict["new"], goal_start_time)
@@ -960,25 +956,25 @@ class workSession:
             if last_finished_content == None:
                 pass
             elif last_finished_content == 'task':
-                self.goal_value_dict["task"] -= 1
+                goal_value_dict["task"] -= 1
                 print_minimal_ui = True
                 last_finished_content = None
                 finished_content_list.pop(len(finished_content_list)-1)
 
             elif last_finished_content == 'correct':
-                self.goal_value_dict["correct"] -= 1
+                goal_value_dict["correct"] -= 1
                 print_minimal_ui = True
                 last_finished_content = None
                 finished_content_list.pop(len(finished_content_list)-1)
 
             elif last_finished_content == 'incorrect':
-                self.goal_value_dict["incorrect"] -= 1
+                goal_value_dict["incorrect"] -= 1
                 print_minimal_ui = True
                 last_finished_content = None
                 finished_content_list.pop(len(finished_content_list)-1)
                 
             elif last_finished_content == 'new':
-                self.goal_value_dict["new"] -= 1
+                goal_value_dict["new"] -= 1
                 print_minimal_ui = True
                 last_finished_content = None
                 finished_content_list.pop(len(finished_content_list)-1)
@@ -1014,7 +1010,8 @@ class workSession:
                     msvcrt.getch()
                 print(END, end='')
                 while True:
-                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'task': self.goal_value_dict["task"], 'correct': self.goal_value_dict["correct"], 'incorrect': self.goal_value_dict["incorrect"], 'new': self.goal_value_dict["new"]})
+                    end = False
+                    self.progress, temp = goalProgress.get_goal_progress(self.goal, {'task': goal_value_dict["task"], 'correct': goal_value_dict["correct"], 'incorrect': goal_value_dict["incorrect"], 'new': goal_value_dict["new"]})
                     if self.progress != 100 and not self.goal == 0:
                         print("タスクがまだ完了していません。\n本当に", end='')
                     print("終了しますか +/-")
@@ -1028,45 +1025,51 @@ class workSession:
                             print_minimal_ui = True
                         break
                     elif finish == '+' or finish == "y":
-                        ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui, reset_time)
-                        bonus_percentage = BONUS_POINT_DICT[done_percentage]
-                        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
-                        self.goal_time_list.append(goal_time)
-                        if is_using_music == True:
-                            music.stop()
-                        return bonus_percentage
+                        end = True
                     else:
                         subprocess.run("cls", shell=True)
                         prints.err('input error')
 
+                    if end == True:
+                        ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui, reset_time)
+                        bonus_percentage = BONUS_POINT_DICT[done_percentage]
+                        self.goal_time_list.append(goal_time)
+
+                        end_time = return_time()
+                        self.time_ended_list.append(end_time)
+                        self.finished_goals[end_time] = {}
+                        for ilen, iitems in enumerate(self.goal_name_dict.items()):
+                            if iitems[1] != None:
+                                self.finished_goals[end_time][f'{ilen}{iitems[1]}'] = goal_value_dict[iitems[0]]
+                        self.past_goal_name_dict = self.goal_name_dict
+
+                        self.pages_finished_full += goal_value_dict["task"]
+                        self.new_words_full += goal_value_dict["new"]
+                        self.correct_full += goal_value_dict["correct"]
+                        self.incorrect_full += goal_value_dict["incorrect"]
+                        self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
+
+                        if is_using_music == True:
+                            music.stop()
+                        return bonus_percentage
+
+
     def wrap_up_session(self):
-        int(time.time())
-        self.finished_goals[int(time.time())] = {self.goal_name_dict["task"]: self.goal_value_dict["task"], 
-            self.goal_name_dict["new"]: self.goal_value_dict["new"], 
-            self.goal_name_dict["correct"]: self.goal_value_dict["correct"],
-            self.goal_name_dict["incorrect"]: self.goal_value_dict["incorrect"]}
-
-        self.pages_finished_full += self.goal_value_dict["task"]
-        self.new_words_full += self.goal_value_dict["new"]
-        self.correct_full += self.goal_value_dict["correct"]
-        self.incorrect_full += self.goal_value_dict["incorrect"]
-
-        self.past_goal_name_dict = self.goal_name_dict
         self.manage_goal_dict.write_to_file()
-        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
 
         if not self.temp_past_goal == None:
             self.past_goal = self.temp_past_goal
         self.temp_past_goal = None
 
-        self.past_incorrect_len = self.incorrect_full
-        self.actual_study_time += self.the_time #why does this need to do this 
+        self.actual_study_time += self.the_time #so that when there's no rest time it can add more
         if not self.add_point == 0:
             self.continuous_time += self.the_time
             self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'last_study_time': self.study_time, 'past_goal': self.past_goal})
         self.time_list.append(self.the_time/60)
         self.label_list.append(self.label)
-        self.time_ended_list.append(return_time())
+        self.past_label = self.label
+        self.label = None
+
 
         if self.delete_log_file == True:
             self.log_file.delete_file()
@@ -1074,9 +1077,6 @@ class workSession:
             self.delete_log_file = False
         self.write_log_files()
         self.write_diary_file()
-        self.past_label = self.label
-        self.label = None
-
 
         self.diary = None
         self.comment_command_type = None
@@ -1114,7 +1114,6 @@ class workSession:
             self.pointString += f' and {(self.recess - rest_time) * self.REST_POINT_CONVERSION_RATE} points added for giving up {(self.recess - rest_time)} minutes of rest time'
             self.manage_persistent_data.change_value({'current_points': self.current_points})
             self.manage_persistent_data.write_to_file()
-
 
     def chceck_if_continue(self, recess):
         self.recess = recess
