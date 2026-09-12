@@ -1,4 +1,3 @@
-
 def splice(variable ,spliceSign, varTyp):
     stringVar = str(variable)
     SpliceVariable = stringVar.find(spliceSign)

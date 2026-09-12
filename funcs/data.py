@@ -1,8 +1,4 @@
-try:
-    from funcs import file
-except:
-    import file
-
+from funcs import file
 
 class manage:
     def __init__(self, data_dictionary, file_object):

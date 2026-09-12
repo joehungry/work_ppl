@@ -1,10 +1,6 @@
-try:
-    from funcs import splice, num
-except:
-    import splice, num
-pastGoal = None
-#======
+from funcs import splice, num
 
+pastGoal = None
 def removeUnneededSpace(originalString):
     if originalString == '':
         pass

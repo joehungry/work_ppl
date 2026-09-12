@@ -1,12 +1,11 @@
-import os, glob, pygame
+import subprocess, glob
 from funcs import prints
 
 class music:
-    def __init__(self, volume, using_instance_stduy, using_instance_rest, chose_music):
+    def __init__(self, using_instance_stduy, using_instance_rest, music_is_chosen):
         self.musicList = []
         self.music_folder = './REPORT\Music/'
-        self.volume = volume
-        self.chose_music = chose_music
+        self.music_is_chosen = music_is_chosen
         self.using_instance_dict = {'choose_music_study': using_instance_stduy, 'choose_music_rest': using_instance_rest}
 
     def select_music_with_prompt(self, var, string, var2):
@@ -14,7 +13,7 @@ class music:
         loopCounting = 0
         if var == None or len(var2) == 0:
             while True:
-                os.system('cls')
+                subprocess.run("cls", shell=True)
                 print('\033[1m' + str(string) + '\033[0m')
                 print()
                 if loopCounting >= 1:
@@ -35,7 +34,7 @@ class music:
 
     def import_music(self):
         stdymusicThereStart = []
-        rstmusicThereStart = []            
+        rstmusicThereStart = []      
 
         for name in glob.glob(self.music_folder + '*.wav'):
             self.musicList.append(name)
@@ -61,7 +60,7 @@ class music:
             self.using_instance_dict['choose_music_study'] = self.musicList[0][2:]
             self.using_instance_dict['choose_music_rest'] = self.musicList[0][2:]
 
-        elif self.chose_music == True:
+        elif self.music_is_chosen == True:
             pass
         else:
             self.using_instance_dict['choose_music_study'] = self.select_music_with_prompt(self.using_instance_dict['choose_music_study'], "For Ending Study", stdymusicThereStart)
@@ -92,28 +91,19 @@ class music:
     def import_change(self, instance, value):
         self.using_instance_dict[instance] = value
 
-
     def set_song(self, using_instance_key, music_on):
-        musicThere = ""
+        does_music_exist = []
         using_instance = self.using_instance_dict[using_instance_key]
-        using_instance 
-        if not using_instance == False:
+        if using_instance != False:
             try:
-                musicThere = glob.glob(using_instance, recursive=True)
+                does_music_exist = glob.glob(using_instance, recursive=True)
             except:
                 pass
 
-        if using_instance == False or len(musicThere) == 0 or music_on == False:
-            is_using_music = False
-            useMusic = 0
-            music = None
+        if using_instance == False or len(does_music_exist) == 0 or music_on == False:
+            use_music = False
+            using_instance = False
 
         else:
-            useMusic = 1
-            is_using_music = True
-            pygame.init()
-            pygame.mixer.init()
-            music = pygame.mixer.Sound(using_instance)
-            music.set_volume(self.volume)
-            vol = music.get_volume()
-        return useMusic, is_using_music, music
+            use_music = True
+        return use_music, using_instance

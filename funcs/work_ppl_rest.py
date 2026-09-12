@@ -1,16 +1,15 @@
 from funcs import prints, sendEmail
 from time import sleep
-import time, math, os, win32api, msvcrt
+import time, math, subprocess, win32api, msvcrt
+from playsound3 import playsound
 
 END = '\033[0m'
+MAX_DELETION_PERCENTAGE = 0.45
+POSTPONE_PENALTY = 1
 
 class rest_elements:
-    def __init__(self, POSTPONE_PENALTY, MAX_DELETION_PERCENTAGE, REST_TIME, last_session_show, REST_TIME_POINTS, REST_POINT_CONVERSION_RATE):
+    def __init__(self, REST_TIME, last_session_show):
         self.REST_TIME = REST_TIME
-        self.POSTPONE_PENALTY = POSTPONE_PENALTY
-        self.MAX_DELETION_PERCENTAGE = MAX_DELETION_PERCENTAGE
-        self.REST_TIME_POINTS = REST_TIME_POINTS
-        self.REST_POINT_CONVERSION_RATE = REST_POINT_CONVERSION_RATE
         self.rest_start_time = time.time()
         self.rest_reset_time = time.time()
         self.last_session_show = last_session_show
@@ -27,45 +26,35 @@ class rest_elements:
         if not self.the_rest_time >= self.REST_TIME * 60:
             pass
 
-        elif self.the_rest_time >= (self.REST_TIME + self.POSTPONE_PENALTY) * 60 and (self.last_session_show * self.MAX_DELETION_PERCENTAGE) - self.minus_point > 0:
+        elif self.the_rest_time >= (self.REST_TIME + POSTPONE_PENALTY) * 60 and (self.last_session_show * MAX_DELETION_PERCENTAGE) - self.minus_point > 0:
             pass
 
-        elif self.the_rest_time >= (self.REST_TIME + self.POSTPONE_PENALTY) * 60 and (self.last_session_show * self.MAX_DELETION_PERCENTAGE) - self.minus_point <= 0:
+        elif self.the_rest_time >= (self.REST_TIME + POSTPONE_PENALTY) * 60 and (self.last_session_show * MAX_DELETION_PERCENTAGE) - self.minus_point <= 0:
             return True
 
     def rest_ui(self, rest_ui, color_for_rest_ui):
-        match rest_ui:
-            case 'minimal_rest_ui':
-                print()
-                print('\033[0m' + "ポイント：", (self.last_session_show + self.REST_TIME_POINTS * self.REST_POINT_CONVERSION_RATE))
-                print()
-                print()
-                print('休みが終わったら"' + color_for_rest_ui + '0/Ins' + END + '"キー')
+        print()
+        print('\033[0m' + "ポイント：", self.last_session_show)
+        print()
+        print()
+        print('休みが終わったら"' + color_for_rest_ui + '0/Ins' + END + '"キー')
+        print()
+        if rest_ui == 'rest_ui':
+            if self.rest_time_left >= 0:
+                print(self.rest_minute, "分", self.rest_second, "秒")
 
-            case 'rest_ui':
-                print()
-                print('\033[0m' + "ポイント：", (self.last_session_show + self.REST_TIME_POINTS * self.REST_POINT_CONVERSION_RATE))
-                print()
-                print()
-                print('休みが終わったら"' + color_for_rest_ui + '0/Ins' + END + '"キー')
-                print()
-                if self.rest_time_left >= 0:
-                    print(self.rest_minute, "分", self.rest_second, "秒")
+            elif self.rest_time_left > self.the_rest_time:
+                print(self.rest_minute, "分", self.rest_second, "秒")
+            else:
+                print("0 分 0 秒")
+            print()
+            recess_sec, recess_min = math.modf(self.REST_TIME) #REST_TIME is a local variable in rest
+            print()
+            print(f'最大休憩時間は {int(recess_min)}分 {int(recess_sec * 60)}秒')
+            print()
 
-                elif self.rest_time_left > self.the_rest_time:
-                    print(self.rest_minute, "分", self.rest_second, "秒")
-                else:
-                    print("0 分 0 秒")
-                print()
-                recess_sec, recess_min = math.modf(self.REST_TIME) #REST_TIME is a local variable in rest
-                print()
-                print(f'最大休憩時間は {int(recess_min)}分 {int(recess_sec * 60)}秒')
-
-                print()
-
-    
     def calculate_penalty(self):
-        self.minus_point = ((time.time() - self.rest_reset_time) - ((self.REST_TIME + self.POSTPONE_PENALTY) * 60)) * (self.last_session_show / 60)
+        self.minus_point = ((time.time() - self.rest_reset_time) - ((self.REST_TIME + POSTPONE_PENALTY) * 60)) * (self.last_session_show / 60)
 
         return self.the_rest_time, self.minus_point
 
@@ -73,40 +62,33 @@ class rest_elements:
 
 class main_rest_class:
     def __init__(self):
-        pass
-    def get_values(self, REST_TIME, REST_TIME_POINTS, REST_POINT_CONVERSION_RATE, email_on, MAX_DELETION_PERCENTAGE, last_session_show, music_class, music_on):
-        self.use_music, self.IS_USING_MUSIC, self.MUSIC = music_class.set_song('choose_music_rest', music_on)
-        self.POSTPONE_PENALTY = 1
-        self.MAX_DELETION_PERCENTAGE = MAX_DELETION_PERCENTAGE
+        self.playing_music = None
+
+    def get_values(self, REST_TIME, email_on, last_session_show, music_class, music_on):
+        self.use_music, self.music_path = music_class.set_song('choose_music_rest', music_on)
         self.REST_TIME = REST_TIME
         self.EMAIL_ON = email_on
-        self.REST_TIME_POINTS = REST_TIME_POINTS
-        self.REST_POINT_CONVERSION_RATE = REST_POINT_CONVERSION_RATE
         self.last_session_show = last_session_show
 
-
-        
     def rest_func(self):
         broken = 0
         clear_screen = 0
         minimal_screen = 0
         email_sent = False
-        self.POSTPONE_PENALTY = 1
         rest_finished = 0
-        #MAX_DELETION_PERCENTAGE = 0.45
 
         email_label = '【WORKPPL】REST HAS ENDED NOTIFICATION'
         email_body = f'休憩の{self.REST_TIME}分が終了しました\n勉強を再開してください'
 
         study_ended_email = sendEmail.EmailSender(email_label, email_body)
-        rest_content = rest_elements(self.POSTPONE_PENALTY, self.MAX_DELETION_PERCENTAGE, self.REST_TIME, self.last_session_show, self.REST_TIME_POINTS, self.REST_POINT_CONVERSION_RATE)
+        rest_content = rest_elements(self.REST_TIME, self.last_session_show)
 
         while True:
             rest_content.calculate_time()
             if minimal_screen == 0:
                 rest_content.rest_ui('rest_ui', '\033[1m')
             elif clear_screen == 0:
-                os.system('cls')
+                subprocess.run("cls", shell=True)
                 rest_content.rest_ui('minimal_rest_ui', '\033[1m')
                 clear_screen= 1
             is_exit = rest_content.calculate_penalty_exit()
@@ -116,9 +98,9 @@ class main_rest_class:
 
             if not the_rest_time >= self.REST_TIME * 60:
                 pass
-            elif the_rest_time >= (self.REST_TIME + self.POSTPONE_PENALTY) * 60 and (self.last_session_show * self.MAX_DELETION_PERCENTAGE) - minus_point > 0:
+            elif the_rest_time >= (self.REST_TIME + POSTPONE_PENALTY) * 60 and (self.last_session_show * MAX_DELETION_PERCENTAGE) - minus_point > 0:
                 print(minus_point, 'ポイント引かれます')
-            elif the_rest_time >= (self.REST_TIME + self.POSTPONE_PENALTY) * 60 and (self.last_session_show * self.MAX_DELETION_PERCENTAGE) - minus_point <= 0:
+            elif the_rest_time >= (self.REST_TIME + POSTPONE_PENALTY) * 60 and (self.last_session_show * MAX_DELETION_PERCENTAGE) - minus_point <= 0:
                 pass
             elif self.EMAIL_ON == True and email_sent == False:
                 email_sent = True
@@ -128,23 +110,23 @@ class main_rest_class:
                     pass
             elif rest_finished == 1 and minimal_screen == 1:
                 pass
-            elif self.use_music == 1 and minimal_screen == 1:
+            elif self.use_music == True and minimal_screen == 1:
                 rest_finished = 1
-                os.system('cls')
+                subprocess.run("cls", shell=True)
                 rest_content.rest_ui('minimal_rest_ui', '\033[1m')
                 print(0, 'ポイント引かれます')
-                self.MUSIC.play()
-                self.use_music = 0
+                self.playing_music = playsound(self.music_path, block=False)
+                self.use_music = False
             elif minimal_screen == 1:
                 rest_finished = 1
-                os.system('cls')
+                subprocess.run("cls", shell=True)
                 rest_content.rest_ui('minimal_rest_ui', '\033[1m')
                 print(0, 'ポイント引かれます')
-            elif self.use_music == 1:
-                print(f'{(self.last_session_show * self.MAX_DELETION_PERCENTAGE) - minus_point}')
+            elif self.use_music == True:
+                print(f'{(self.last_session_show * MAX_DELETION_PERCENTAGE) - minus_point}')
                 print(0, 'ポイント引かれます')
-                self.MUSIC.play()
-                self.use_music = 0
+                self.playing_music = playsound(self.music_path, block=False)
+                self.use_music = False
             else:
                 print(0, 'ポイント引かれます')
 
@@ -157,7 +139,7 @@ class main_rest_class:
             stop = win32api.GetKeyState(0x60)
             if stop < 0:
                 print("\033[8m")
-                os.system('cls')
+                subprocess.run("cls", shell=True)
                 while msvcrt.kbhit():
                     msvcrt.getch()
                 while True:
@@ -183,15 +165,16 @@ class main_rest_class:
                         sleep(0.1)
                         break
                     else:
-                        os.system('cls')
+                        subprocess.run("cls", shell=True)
                         prints.err('input error')
             if minimal_screen == 0:
-                os.system('cls')
+                subprocess.run("cls", shell=True)
 
             if broken ==1:
-                os.system('cls')
-                if self.IS_USING_MUSIC == True:
-                    self.MUSIC.stop()
+                subprocess.run("cls", shell=True)
+                if self.playing_music != None:
+                    self.playing_music.stop()
+
                         
                 if minus_point > 0:
                     return minus_point

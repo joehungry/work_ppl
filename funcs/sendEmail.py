@@ -1,9 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
-try:
-    from funcs import prints
-except:
-    import prints
+from funcs import prints
 
 class EmailSender:
     def __init__(self, subject, body):

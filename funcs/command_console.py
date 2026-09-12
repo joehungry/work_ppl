@@ -1,9 +1,5 @@
 import datetime
-try:
-    from funcs import num, splice, goalLanguage
-
-except:
-    import num, splice, goalLanguage
+from funcs import num, splice, goalLanguage
 
 today = datetime.datetime.now()
 today_foratted = today.strftime('%Y-%m-%d')

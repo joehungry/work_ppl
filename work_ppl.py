@@ -119,10 +119,8 @@ class workSession:
         self.current_points = 0
 
         self.REST_POINT_CONVERSION_RATE = 0.1
-        self.MAX_DELETION_PERCENTAGE = 0.45
 
         self.actual_study_time = 0
-        self.rest_time_points = 0
         self.time_ended_list = []
 
         self.DEVIDE_POINT_BY = 0.7
@@ -143,7 +141,7 @@ class workSession:
         persistent_data = {'continuous_time': 0, 'current_points': 0, 'new_words_full': 0, 'correct_full': 0, 'incorrect_full': 0, 'pages_finished_full': 0, 'recess_now': 0, 'past_goal': None, 'last_study_time': None, 'label_base': None, 'today': None}
         self.manage_persistent_data = data.manage(persistent_data, persistent_data_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\progress.txt'])
-        settings_data = {'volume': 100, 'choose_music_study': None, 'choose_music_rest': None, 'chose_music': False, 'music_on': True, 'filename': None, 'filedir': None}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
+        settings_data = {'choose_music_study': None, 'choose_music_rest': None, 'music_is_chosen': False, 'music_on': True, 'filename': None, 'filedir': None}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\settings.txt'])
         self.manage_goal_dict = data.manage(self.goal_name_dict, past_goal_file)
@@ -278,10 +276,9 @@ class workSession:
         self.last_study_time = extracted_dict['last_study_time']
 
         extracted_dict = self.manage_settings_data.extract_from_file()
-        self.volume = extracted_dict['volume']
         self.choose_music_study = extracted_dict['choose_music_study']
         self.choose_music_rest = extracted_dict['choose_music_rest']
-        self.chose_music = extracted_dict['chose_music']
+        self.music_is_chosen = extracted_dict['music_is_chosen']
         self.music_on = extracted_dict['music_on']
 
         self.user_made_dir = extracted_dict['filedir']
@@ -331,11 +328,11 @@ class workSession:
         return self.recess, opening_string
     
     def import_settings(self):
-        self.music_content = play_music.music(self.volume, self.choose_music_study, self.choose_music_rest, self.chose_music)
+        self.music_content = play_music.music(self.choose_music_study, self.choose_music_rest, self.music_is_chosen)
         self.choose_music_study, self.choose_music_rest = self.music_content.import_music()
         self.manage_settings_data.change_value({'choose_music_study': self.choose_music_study, 
                                                  'choose_music_rest': self.choose_music_rest, 
-                                                 'chose_music': True})
+                                                 'music_is_chosen': True})
         self.manage_settings_data.write_to_file()
 
 
@@ -361,7 +358,7 @@ class workSession:
         self.manage_persistent_data.write_to_file()
         rest_session = work_ppl_rest.main_rest_class()
         #? i think its past points
-        rest_session.get_values(time_of_rest, self.rest_time_points, self.REST_POINT_CONVERSION_RATE, self.email_on, self.MAX_DELETION_PERCENTAGE, self.past_points, self.music_content, self.music_on)
+        rest_session.get_values(time_of_rest, self.email_on, self.past_points, self.music_content, self.music_on)
         minus_points = rest_session.rest_func()
         if minus_points == 'crash':
             self.write_study_content_file(time_started_list)
@@ -681,10 +678,6 @@ class workSession:
                 case 'end_study':
                     subprocess.run("cls", shell=True)
                     return False
-                case 'volume':
-                    self.volume = cli_output[command]
-                    print_var.append(self.volume)
-                    self.manage_settings_data.change_value({'volume': self.volume})
                 case 'change_sound':
                     temp_choose_music = self.music_content.chage_music()
                     choose_music = 'None'
@@ -875,8 +868,8 @@ class workSession:
         last_finished_content = None
         finished_content_list = []
 
-        use_music, is_using_music, music = self.music_content.set_song('choose_music_study', self.music_on)
-
+        use_music, music_path = self.music_content.set_song('choose_music_study', self.music_on)
+        playing_music = None
 
         while True:
             ui_time, self.time_point, done_percentage = self.calculate_time_and_point(switch_ui, reset_time)
@@ -993,9 +986,8 @@ class workSession:
                 print_minimal_ui = True
 
             elif session_time_finished == False:
-                if use_music == 1:
-                    music.play()
-                    use_music = 0
+                if use_music == True:
+                    playing_music = playsound(music_path, block=False)
                 print(END)
                 print(str(self.study_time) + "分が経ちました" + "\033[8m")
                 session_time_finished = True
@@ -1049,8 +1041,9 @@ class workSession:
                         self.incorrect_full += goal_value_dict["incorrect"]
                         self.manage_persistent_data.change_value({'continuous_time': self.continuous_time, 'new_words_full': self.new_words_full, 'correct_full': self.correct_full, 'incorrect_full': self.incorrect_full, 'pages_finished_full': self.pages_finished_full})
 
-                        if is_using_music == True:
-                            music.stop()
+                        if playing_music != None:
+                            playing_music.stop()
+
                         return bonus_percentage
 
 
@@ -1152,7 +1145,10 @@ if __name__ == '__main__':
 
     load_num += 1
     prints.loading(load_num)
-    import math, msvcrt, os
+    import math, msvcrt
+    load_num += 1
+    prints.loading(load_num)
+    from playsound3 import playsound
     load_num += 1
     prints.loading(load_num)
     from funcs import num, file, data, work_ppl_rest, play_music, command_console
@@ -1175,7 +1171,7 @@ if __name__ == '__main__':
 
     Title = "WORK PPL"
 
-    os.system("title " + Title)
+    subprocess.run(["cmd", "/c", "title", Title], check=True)
 
     RED = '\033[31m'
     END = '\033[0m'
@@ -1199,7 +1195,6 @@ if __name__ == '__main__':
     load_num += 1
     prints.loading(load_num)
 
-    subprocess.run("cls", shell=True)
     session.writing_start_of_file()
     load_num += 1
     prints.loading(load_num)
