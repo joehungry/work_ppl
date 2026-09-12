@@ -1,5 +1,3 @@
-#ver.2.2.4
-
 def seconds_to_hms(seconds):
     done_hr = math.floor(seconds / 3600)
     done_min = math.floor((seconds - (done_hr* 3600)) / 60)
@@ -108,7 +106,6 @@ class workSession:
         self.comment_index = 0
         self.comment_list = []
         self.comment_time = None
-
 
         self.goal = None
         self.temp_past_goal = None
@@ -891,9 +888,7 @@ class workSession:
                 self.main_ui_screen(switch_ui, ui_time, encouragement, bonus_percentage, goal_value_dict)
 
             one_finish = win32api.GetKeyState(0x64)
-            if one_finish >= 0:
-                pass
-            elif self.goal_name_dict["task"] == None:
+            if self.goal_name_dict["task"] == None:
                 pass
             elif one_finish < 0:
                 goal_value_dict["task"] += goal_add_value(1, self.goal_name_dict["task"])
@@ -1049,6 +1044,7 @@ class workSession:
 
     def wrap_up_session(self):
         self.manage_goal_dict.write_to_file()
+        self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
 
         if not self.temp_past_goal == None:
             self.past_goal = self.temp_past_goal
