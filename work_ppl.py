@@ -725,7 +725,7 @@ class workSession:
                         else:
                             self.change_goal_value[goal_to_change] = goal_name
                             print_var.append(goal_name)
-                    print(self.goal_name_dict)
+                            print(self.goal_name_dict)
 
                 case 'print':
                     if error == False:
