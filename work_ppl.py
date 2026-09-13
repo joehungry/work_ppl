@@ -126,6 +126,7 @@ class workSession:
         self.user_made_file_content = None
 
         self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None}
+        goal_name_dict_for_manage = {"task": None, "new": None, "correct": None, "incorrect": None} #cause if i use the one above it just copies the literal dictionary. that shit is not what i want
 
         self.finished_goals = {}
         self.goal_time_list = []
@@ -140,7 +141,7 @@ class workSession:
         settings_data = {'choose_music_study': None, 'choose_music_rest': None, 'music_is_chosen': False, 'music_on': True, 'filename': None, 'filedir': None}#, 'email_from': None, 'email_to': None, 'gmail_app_password': None}
         self.manage_settings_data = data.manage(settings_data, settings_file)
         subprocess.check_call(["attrib","+H", 'REPORT\\logs\\settings.txt'])
-        self.manage_goal_dict = data.manage(self.goal_name_dict, past_goal_file)
+        self.manage_goal_dict = data.manage(goal_name_dict_for_manage, past_goal_file)
 
         file.content(f'REPORT\\music')
         self.diary_file = file.content(f'REPORT\\diary\\{str(now_start.year)}\\{now_start.month}', f'diary for {str(today)}.txt', lock=True)
@@ -692,6 +693,7 @@ class workSession:
                         print('rest safely pending usage')
                         return 2
                 case 'goal':
+                    self.goal_name_dict = {"task": None, "new": None, "correct": None, "incorrect": None} #so that when i change the goal from sv to tsk, it wouldn't sustain the names of sv, which in turn would make the session show the unneeded names
                     self.goal = cli_output[command]
                     print_var.append(str(self.goal))
                 case 'goal_no_goal':
