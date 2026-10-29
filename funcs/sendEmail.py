@@ -1,14 +1,18 @@
-import smtplib
+import smtplib, dotenv, os
 from email.mime.text import MIMEText
 from funcs import prints
+
+dotenv.load_dotenv('REPORT/send_mail.env')
+MAIL = os.getenv("MAIL")
+PASSWORD = os.getenv("PASSWORD")
 
 class EmailSender:
     def __init__(self, subject, body):
         # Define the SMTP server and port
         self.smtp_server = 'smtp.gmail.com'
         self.smtp_port = 587
-        self.password = 'teyu qxsr lgqo rxcb'
-        self.sender_email = 'zeemakoto@gmail.com'
+        self.password = PASSWORD
+        self.sender_email = MAIL
         self.receiver_email = '23hp101@m.nanzan-u.ac.jp'
         self.subject = subject
         self.body = body
